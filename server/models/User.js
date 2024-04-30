@@ -7,4 +7,6 @@ const userSchema = new mongoose.Schema({
     image: String
 },{timestamps:true})
 
-export default users = new mongoose.model('users', userSchema) 
+const userdb = new mongoose.model('users', userSchema) 
+
+module.exports = userdb
