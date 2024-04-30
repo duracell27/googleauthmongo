@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.block{
+    @apply p-2 shadow-lg shadow-black/30 bg-green-700 rounded-lg my-2
+}

@@ -13,7 +13,6 @@ const Headers = () => {
       setUserdata(response.data.user);
     } catch (error) {
       console.log("error");
-      
     }
   };
 
@@ -27,32 +26,29 @@ const Headers = () => {
 
   return (
     <header>
-      <nav className="flex justify-between p-2 bg-green-600 text-white">
-        <h1>LandOwer</h1>
-        <ul className="flex gap-2 items-center">
-          <li className="p-2 rounded-md bg-green-700">
-            <NavLink to={"/"}>Home</NavLink>
-          </li>
+      <nav className="flex justify-between items-center p-2 bg-green-600 text-white">
+        <NavLink to={"/"}>
+          <h1 className="font-bold text-2xl">LandOwer</h1>
+        </NavLink>
 
-          <li className="p-2 rounded-md bg-green-700">
-            <NavLink to={"/dashboard"}>Dashboard</NavLink>
-          </li>
-        </ul>
         {Object.keys(userdata).length ? (
           <div className="flex gap-2 items-center">
-            {userdata?.displayName}
-            <img
-              className="w-6 h-6 rounded-full"
-              src={userdata?.image}
-              alt="userlogo"
-            />
-            <button onClick={logout} className="bg-green-800 p-2">
-              LogOut
+            <NavLink to={"/profile"} className='p-1 flex gap-2 bg-green-700 rounded-full pl-2'>
+              <span>{userdata?.displayName}</span>
+              <img
+                className="w-6 h-6 rounded-full"
+                src={userdata?.image}
+                alt="userlogo"
+              />
+            </NavLink>
+
+            <button onClick={logout} className="bg-green-700 p-2 font-bold rounded-xl">
+              Вийти
             </button>
           </div>
         ) : (
-          <NavLink className="p-2 rounded-md bg-green-700" to={"/login"}>
-            Login
+          <NavLink className="p-2 rounded-md bg-green-700 font-bold" to={"/login"}>
+            Вхід
           </NavLink>
         )}
       </nav>
