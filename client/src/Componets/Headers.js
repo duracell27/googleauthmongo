@@ -12,14 +12,14 @@ const Headers = () => {
 
       setUserdata(response.data.user);
     } catch (error) {
-      console.log("error");
+      console.log("errorHeaders");
     }
   };
 
   const logout = () => {
     window.open("http://localhost:5050/logout", "_self");
   };
-  console.log(userdata);
+  
   useEffect(() => {
     getUser();
   }, []);

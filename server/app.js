@@ -127,7 +127,7 @@ app.post("/friendrequest", async (req, res) => {
 });
 
 app.get("/friendrequest", async (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.query.userId;
   
   //знаходжу ті реквести в яких статус прийнятий і тоя ід в from або to
   const friendsData = await friendRequestdb
@@ -142,11 +142,14 @@ app.get("/friendrequest", async (req, res) => {
   //сортую дату і вибираю всі ід які не мої щоб знайти моїх друзів
   friendsData.forEach((itemObj) => {
     if (itemObj.from._id == userId) {
-      friends.push(itemObj.to);
+      friends.push({userInfo: itemObj.to, reqId: itemObj._id});
     } else {
-      friends.push(itemObj.from);
+      friends.push({userInfo: itemObj.from, reqId: itemObj._id});
     }
   });
+
+
+
   //знаходжу ті реквести в яких статус пендінг і моя ід в to щоб побачити хто мені надіслав запити
   const requestsData = await friendRequestdb
     .find({ status: "pending", to: userId })
@@ -157,7 +160,7 @@ app.get("/friendrequest", async (req, res) => {
     requests.push({ userInfo: itemObj.from, reqId: itemObj._id });
   });
 
-  console.log("friends sorted", friends);
+
   res.status(200).send({ friends: friends, requests: requests });
 });
 
@@ -172,6 +175,12 @@ app.put("/friendrequest", async (req, res) => {
   }else{
     res.status(404).send({message: "status not updated"})
   }
+})
+
+app.post('/searchuser', async (req, res) => {
+  const searchquery = req.body.searchquery;
+  const users = await userdb.find({displayName: {$regex: searchquery, $options: 'i'}}).limit(10)
+  res.status(200).send(users)
 })
 
 app.listen(PORT, () => {
