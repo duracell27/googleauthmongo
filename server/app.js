@@ -13,7 +13,7 @@ const friendRequestdb = require("./models/FriendRequest");
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CLIENT_URL,
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
   })
@@ -78,11 +78,11 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    successRedirect: "http://localhost:3000/profile",
-    failureRedirect: "http://localhost:3000/login",
+    successRedirect: process.env.CLIENT_URL + "/profile",
+    failureRedirect: process.env.CLIENT_URL + "/login",
   })
 );
-
+// робота з логіном, вхід і логаут і робота з юзерами початок
 app.get("/login/success", async (req, res) => {
   if (req.user) {
     res.status(200).send({ message: "user Login", user: req.user });
@@ -97,20 +97,30 @@ app.get("/logout", (req, res, next) => {
       return next(err);
     }
   });
-  res.redirect("http://localhost:3000");
+  res.redirect(process.env.CLIENT_URL);
 });
+//пошук користувачів по імені
+app.post('/searchuser', async (req, res) => {
+  const searchquery = req.body.searchquery;
 
+  const users = await userdb.find({displayName: {$regex: searchquery, $options: 'i'}}).limit(10)
+  res.status(200).send(users)
+})
+// робота з логіном, вхід і логаут і робота з юзерами кінець
+
+// робота з друзями початок
+//створення запиту на дружбу
 app.post("/friendrequest", async (req, res) => {
   const userId = req.body.userId;
   const userIdToSend = req.body.userIdToSend;
-
+  
   const isRequestExists = await friendRequestdb.findOne({
     from: userId,
     to: userIdToSend,
   });
 
   if (isRequestExists) {
-    res.status(404).send({ message: "friend request already exists" });
+    res.status(404).send({ message: "Такий запит вже існує" });
   } else {
     const frReq = await friendRequestdb.create({
       from: userId,
@@ -119,16 +129,16 @@ app.post("/friendrequest", async (req, res) => {
     });
     const resp = await frReq.save();
     if (resp._id) {
-      res.status(200).send({ message: "friend request sended" });
+      res.status(200).send({ message: "Запит надіслано" });
     } else {
-      res.status(404).send({ message: "friend request not sended" });
+      res.status(404).send({ message: "Помилка запиту дзузів" });
     }
   }
 });
-
+//отримати дані про друзів та запити друзів
 app.get("/friendrequest", async (req, res) => {
   const userId = req.query.userId;
-  
+ 
   //знаходжу ті реквести в яких статус прийнятий і тоя ід в from або to
   const friendsData = await friendRequestdb
     .find({
@@ -163,25 +173,21 @@ app.get("/friendrequest", async (req, res) => {
 
   res.status(200).send({ friends: friends, requests: requests });
 });
-
+//відповісти на запит дружби та видалити з друзів
 app.put("/friendrequest", async (req, res) => {
 //шукаю реквест по ід і заміняю статус або accepted або rejected
   const reqestId = req.body.reqestId;
   const status = req.body.status;
+
   const updatedFriendRequest = await friendRequestdb.findOneAndUpdate({_id: reqestId}, {status: status}, {new: true})
 
   if(updatedFriendRequest._id){
-    res.status(200).send({message: "status updated"})
+    res.status(200).send({message: "Статус оновлено"})
   }else{
-    res.status(404).send({message: "status not updated"})
+    res.status(404).send({message: "Статус не оновлено"})
   }
 })
-
-app.post('/searchuser', async (req, res) => {
-  const searchquery = req.body.searchquery;
-  const users = await userdb.find({displayName: {$regex: searchquery, $options: 'i'}}).limit(10)
-  res.status(200).send(users)
-})
+// робота з друзями кінець
 
 app.listen(PORT, () => {
   console.log(`server start on port ${PORT}`);

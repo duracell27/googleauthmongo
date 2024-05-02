@@ -1,28 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { NavLink } from "react-router-dom";
-import axios from "axios";
+import { AuthContext } from "../App";
 
 const Headers = () => {
-  const [userdata, setUserdata] = useState({});
-  const getUser = async () => {
-    try {
-      const response = await axios.get("http://localhost:5050/login/success", {
-        withCredentials: true,
-      });
-
-      setUserdata(response.data.user);
-    } catch (error) {
-      console.log("errorHeaders");
-    }
-  };
+  
+  const {userdata} = useContext(AuthContext)
 
   const logout = () => {
-    window.open("http://localhost:5050/logout", "_self");
+    window.open(process.env.REACT_APP_BACK_URL + "/logout", "_self");
   };
   
-  useEffect(() => {
-    getUser();
-  }, []);
+
 
   return (
     <header>
@@ -42,7 +30,7 @@ const Headers = () => {
               />
             </NavLink>
 
-            <button onClick={logout} className="bg-green-700 p-2 font-bold rounded-xl">
+            <button onClick={logout} className="bg-slate-800 p-1 px-2 font-bold rounded-xl">
               Вийти
             </button>
           </div>

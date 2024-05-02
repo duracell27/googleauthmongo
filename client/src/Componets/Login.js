@@ -1,10 +1,9 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 const Login = () => {
   const loginWithGoogle = () => {
-    window.open("http://localhost:5050/auth/google/callback", "_self");
+    window.open(process.env.REACT_APP_BACK_URL + "/auth/google/callback", "_self");
   };
   return (
     <div className="bg-green-500 h-screen">
