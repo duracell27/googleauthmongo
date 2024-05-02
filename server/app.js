@@ -67,6 +67,13 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
+app.get('/', (req, res) => {
+  res.status(200).send({ message: "server is running" });
+})
+app.get('/test', (req, res) => {
+  res.status(200).send({ message: "test route" });
+})
+
 //initial google outh
 app.get(
   "/auth/google",
@@ -188,7 +195,7 @@ app.put("/friendrequest", async (req, res) => {
   }
 })
 // робота з друзями кінець
-
+//test
 app.listen(PORT, () => {
   console.log(`server start on port ${PORT}`);
 });
