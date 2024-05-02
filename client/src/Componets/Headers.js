@@ -27,6 +27,7 @@ const Headers = () => {
                 className="w-6 h-6 rounded-full"
                 src={userdata?.image}
                 alt="userlogo"
+                referrerpolicy="no-referrer"
               />
             </NavLink>
 
