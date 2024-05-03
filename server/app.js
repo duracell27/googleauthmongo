@@ -10,6 +10,8 @@ const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
 const userdb = require("./models/User");
 const friendRequestdb = require("./models/FriendRequest");
+const curencydb = require("./models/Curency");
+const languagedb = require("./models/Language");
 
 app.use(
   cors({
@@ -67,12 +69,12 @@ passport.deserializeUser((user, done) => {
   done(null, user);
 });
 
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).send({ message: "server is running" });
-})
-app.get('/test', (req, res) => {
+});
+app.get("/test", (req, res) => {
   res.status(200).send({ message: "test route" });
-})
+});
 
 //initial google outh
 app.get(
@@ -107,12 +109,14 @@ app.get("/logout", (req, res, next) => {
   res.redirect(process.env.CLIENT_URL);
 });
 //пошук користувачів по імені
-app.post('/searchuser', async (req, res) => {
+app.post("/searchuser", async (req, res) => {
   const searchquery = req.body.searchquery;
 
-  const users = await userdb.find({displayName: {$regex: searchquery, $options: 'i'}}).limit(10)
-  res.status(200).send(users)
-})
+  const users = await userdb
+    .find({ displayName: { $regex: searchquery, $options: "i" } })
+    .limit(10);
+  res.status(200).send(users);
+});
 // робота з логіном, вхід і логаут і робота з юзерами кінець
 
 // робота з друзями початок
@@ -120,7 +124,7 @@ app.post('/searchuser', async (req, res) => {
 app.post("/friendrequest", async (req, res) => {
   const userId = req.body.userId;
   const userIdToSend = req.body.userIdToSend;
-  
+
   const isRequestExists = await friendRequestdb.findOne({
     from: userId,
     to: userIdToSend,
@@ -145,7 +149,7 @@ app.post("/friendrequest", async (req, res) => {
 //отримати дані про друзів та запити друзів
 app.get("/friendrequest", async (req, res) => {
   const userId = req.query.userId;
- 
+
   //знаходжу ті реквести в яких статус прийнятий і тоя ід в from або to
   const friendsData = await friendRequestdb
     .find({
@@ -159,13 +163,11 @@ app.get("/friendrequest", async (req, res) => {
   //сортую дату і вибираю всі ід які не мої щоб знайти моїх друзів
   friendsData.forEach((itemObj) => {
     if (itemObj.from._id == userId) {
-      friends.push({userInfo: itemObj.to, reqId: itemObj._id});
+      friends.push({ userInfo: itemObj.to, reqId: itemObj._id });
     } else {
-      friends.push({userInfo: itemObj.from, reqId: itemObj._id});
+      friends.push({ userInfo: itemObj.from, reqId: itemObj._id });
     }
   });
-
-
 
   //знаходжу ті реквести в яких статус пендінг і моя ід в to щоб побачити хто мені надіслав запити
   const requestsData = await friendRequestdb
@@ -177,24 +179,117 @@ app.get("/friendrequest", async (req, res) => {
     requests.push({ userInfo: itemObj.from, reqId: itemObj._id });
   });
 
-
   res.status(200).send({ friends: friends, requests: requests });
 });
 //відповісти на запит дружби та видалити з друзів
 app.put("/friendrequest", async (req, res) => {
-//шукаю реквест по ід і заміняю статус або accepted або rejected
+  //шукаю реквест по ід і заміняю статус або accepted або rejected
   const reqestId = req.body.reqestId;
   const status = req.body.status;
 
-  const updatedFriendRequest = await friendRequestdb.findOneAndUpdate({_id: reqestId}, {status: status}, {new: true})
+  const updatedFriendRequest = await friendRequestdb.findOneAndUpdate(
+    { _id: reqestId },
+    { status: status },
+    { new: true }
+  );
 
-  if(updatedFriendRequest._id){
-    res.status(200).send({message: "Статус оновлено"})
-  }else{
-    res.status(404).send({message: "Статус не оновлено"})
+  if (updatedFriendRequest._id) {
+    res.status(200).send({ message: "Статус оновлено" });
+  } else {
+    res.status(404).send({ message: "Статус не оновлено" });
   }
-})
+});
 // робота з друзями кінець
+
+//робота з профілем користувача початок
+//Додавання валюти в список
+app.post("/profile/addCurency", async (req, res) => {
+  const value = req.body.curencyValue;
+  const desc = req.body.curencyDesc;
+
+  const newCurency = await curencydb.create({
+    curencyValue: value,
+    curencyDesc: desc,
+  });
+  const resp = await newCurency.save();
+  if (resp._id) {
+    res.status(200).send({ message: "Валюта додана" });
+  } else {
+    res.status(404).send({ message: "Валюта не додана" });
+  }
+});
+
+//Додавання мови в список
+app.post("/profile/addLanguage", async (req, res) => {
+  const value = req.body.langValue;
+  const desc = req.body.langDesc;
+
+  const newLanguage = await languagedb.create({
+    langValue: value,
+    langDesc: desc,
+  });
+  const resp = await newLanguage.save();
+  if (resp._id) {
+    res.status(200).send({ message: "Мова додана" });
+  } else {
+    res.status(404).send({ message: "Мова не додана" });
+  }
+});
+
+//Отримати список мов та валют а також стандартних юзерських мови валюити та картки
+app.get("/profile/info", async (req, res) => {
+
+  const userId = req.query.userId;
+
+  const curency = await curencydb.find();
+  const language = await languagedb.find();
+
+  const user = await userdb.findOne({_id: userId}).populate("curency language")
+  const defCurency = user?.curency?.curencyValue
+  const defLanguage = user?.language?.langValue
+  const defCardNumber = user?.cardNumber
+
+  res.status(200).json({ curency: curency, language: language, defCurency, defLanguage, defCardNumber });
+});
+
+//зберегти налаштування валюти валюти та номеру картки
+app.put("/profile/settings", async (req, res) => {
+  const id = req.body.id;
+  const userId = req.body.userId;
+  const whatToChange = req.body.whatToChange;
+
+  if (!id) {
+    res.status(404).json({ message: "Не передано ід" });
+  } else {
+    if (whatToChange === "curency") {
+      const updatedUser = await userdb.findOneAndUpdate(
+        { _id: userId },
+        { curency: id },
+        { new: true }
+      );
+      res.status(200).json({ message: "Валюта оновлена" });
+    } else if (whatToChange === "language") {
+      const updatedUser = await userdb.findOneAndUpdate(
+        { _id: userId },
+        { language: id },
+        { new: true }
+      );
+      res.status(200).json({ message: "Мова оновлена" });
+    } else if (whatToChange === "card") {
+      const updatedUser = await userdb.findOneAndUpdate(
+        { _id: userId },
+        { cardNumber: id },
+        { new: true }
+      );
+      res.status(200).json({ message: "Картка оновлена" });
+    } else {
+      res.status(404).json({ message: "Помилка при оновленні даних профілю" });
+    }
+  }
+});
+
+//робота з профілем користувача кінець
+
 //test
 app.listen(PORT, () => {
   console.log(`server start on port ${PORT}`);

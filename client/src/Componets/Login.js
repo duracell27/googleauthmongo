@@ -2,9 +2,11 @@ import React from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 const Login = () => {
+
   const loginWithGoogle = () => {
     window.open(process.env.REACT_APP_BACK_URL + "/auth/google/callback", "_self");
   };
+  
   return (
     <div className="bg-green-500 h-screen">
       <div class="flex flex-col gap-1 justify-evenly items-center">
