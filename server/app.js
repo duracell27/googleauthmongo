@@ -12,6 +12,9 @@ const userdb = require("./models/User");
 const friendRequestdb = require("./models/FriendRequest");
 const curencydb = require("./models/Curency");
 const languagedb = require("./models/Language");
+const groupdb = require("./models/Group");
+const expensedb = require("./models/Expense");
+const { populate } = require("dotenv");
 
 app.use(
   cors({
@@ -201,6 +204,9 @@ app.put("/friendrequest", async (req, res) => {
 });
 // робота з друзями кінець
 
+
+
+
 //робота з профілем користувача початок
 //Додавання валюти в список
 app.post("/profile/addCurency", async (req, res) => {
@@ -289,6 +295,116 @@ app.put("/profile/settings", async (req, res) => {
 });
 
 //робота з профілем користувача кінець
+
+//робота з групами початок
+// створити групу
+app.post("/group", async (req, res) => {
+  const userId = req.body.userId;
+  const groupName = req.body.groupName;
+  
+  const groupImage = req.body.groupImage || '';
+
+  const newGroup = await groupdb.create({
+    name: groupName,
+    image: groupImage,
+    members: [userId]
+  });
+  const resp = await newGroup.save();
+  if (resp._id) {
+    res.status(200).send({ message: "Група створена" });
+  } else {
+    res.status(404).send({ message: "Група не створена" });
+  }
+});
+//редагування групи: імя та картинка
+app.put("/group", async (req, res) => {
+  const groupId = req.body.groupId;
+
+  const name = req.body.name;
+  const image = req.body.image;
+
+  const updatedGroup = await groupdb.findOneAndUpdate(
+    { _id: groupId },
+    { name: name, image: image },
+    { new: true }
+  );
+  
+  if (updatedGroup._id) {
+    res.status(200).send({ message: "Група оновлена" });
+  } else {
+    res.status(404).send({ message: "Група не оновлена" });
+  }
+})
+
+// видалити групу
+app.delete("/group", async (req, res) => {
+  const groupId = req.query.groupId; 
+
+  const response = await groupdb.deleteOne({_id: groupId})
+
+  if (response.deletedCount == 1) {
+    res.status(200).json({ message: "Група видалена" });
+  } else {
+    res.status(404).json({ message: "Група не видалена" });
+  }
+})
+//додавання учасника до групи
+app.post("/group/members", async (req, res) => {
+  const groupId = req.body.groupId;
+  const userId = req.body.userId;
+
+  const updatedGroup = await groupdb.findOneAndUpdate(
+    { _id: groupId },
+    { $push: { members: userId } },
+    { new: true }
+  );
+  if (updatedGroup._id){
+    res.status(200).json({ message: 'Учасник доданий'})
+  }else{
+    res.status(404).json({message: 'Учасник не доданий'})
+  }
+})
+//видалення учасника з групи
+app.delete('/group/members', async (req, res)=>{
+  const groupId = req.query.groupId;
+  const deleteuserId = req.query.delUserId
+
+  const response = await groupdb.updateOne({_id: groupId},{$pull: { members: deleteuserId}})
+  if (response.modifiedCount === 1){
+    res.status(200).json({message: 'Учасник видалений'})
+  }else{
+    res.status(404).json({message: 'Учасник не видалений'})
+  }
+})
+//робота з групами кінець
+
+
+//робота з витратами початок
+
+app.post('/expenses', async (req, res) =>{
+  const expenseData = req.body
+
+  const newExpense = await expensedb.create(expenseData)
+  const response = await newExpense.save()
+
+  if(response._id){
+    res.status(200).json({message: 'Витрата створена'})
+  }else{
+    res.status(404).json({message: 'Учасник не видалений'})
+  }
+})
+
+app.get('/expenses', async (req, res) =>{
+  const expenseId = req.query.expenseId 
+
+  const response = await expensedb.findOne({_id: expenseId}).populate('owe.user land.user group')
+
+  console.log('expense=', response)
+  console.log('oweSecondName=', response.owe[1].user.displayName)
+  
+})
+
+//робота з витратами кінець
 
 //test
 app.listen(PORT, () => {
