@@ -238,7 +238,7 @@ const Account = () => {
                   className="w-6 h-6 rounded-full"
                   src={friend?.userInfo?.image}
                   alt="userlogo"
-                  referrerpolicy="no-referrer"
+                  referrerPolicy="no-referrer"
                 />
                 <button
                   className="bg-slate-800 rounded-full w-6 h-6 cursor-pointer"
@@ -261,7 +261,7 @@ const Account = () => {
                   className="w-6 h-6 rounded-full"
                   src={request?.userInfo?.image}
                   alt="userlogo"
-                  referrerpolicy="no-referrer"
+                  referrerPolicy="no-referrer"
                 />
                 <button
                   className="bg-slate-800 rounded-full w-6 h-6 cursor-pointer"
@@ -303,7 +303,7 @@ const Account = () => {
                       className="w-6 h-6 rounded-full"
                       src={user?.image}
                       alt="userlogo"
-                      referrerpolicy="no-referrer"
+                      referrerPolicy="no-referrer"
                     />
                     <button
                       className="bg-slate-800 rounded-full w-6 h-6 cursor-pointer"

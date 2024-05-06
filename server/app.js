@@ -15,6 +15,9 @@ const languagedb = require("./models/Language");
 const groupdb = require("./models/Group");
 const expensedb = require("./models/Expense");
 const { populate } = require("dotenv");
+const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
+const uniqid = require("uniqid");
+const fileUpload = require('express-fileupload');
 
 app.use(
   cors({
@@ -32,6 +35,8 @@ app.use(
     saveUninitialized: true,
   })
 );
+
+app.use(fileUpload())
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -311,11 +316,21 @@ app.post("/group", async (req, res) => {
   });
   const resp = await newGroup.save();
   if (resp._id) {
-    res.status(200).send({ message: "Група створена" });
+    res.status(200).json({ message: "Група створена" });
   } else {
-    res.status(404).send({ message: "Група не створена" });
+    res.status(404).json({ message: "Група не створена" });
   }
 });
+
+//отримати списк груп
+app.get("/group", async (req, res) => {
+  const userId = req.query.userId;
+
+  const groups = await groupdb.find({ members: userId });
+
+  res.status(200).json(groups);
+});
+
 //редагування групи: імя та картинка
 app.put("/group", async (req, res) => {
   const groupId = req.body.groupId;
@@ -376,6 +391,46 @@ app.delete('/group/members', async (req, res)=>{
     res.status(404).json({message: 'Учасник не видалений'})
   }
 })
+//отримати посилання на картинку від aws
+app.post('/group/avatar', async (req, res)=>{
+
+  const file = req.files.file
+
+  if(file){
+
+    const s3Client = new S3Client({
+      region: "eu-north-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_SECRET_KEY,
+      },
+    });
+
+    const randomId = uniqid();
+    const ext = file.name.split(".").pop();
+    const newFileName = randomId + "." + ext;
+
+    // const chunks = [];
+    // for await (const chunk of file.stream()) {
+    //   chunks.push(chunk);
+    // }
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: newFileName,
+        Body: file.data,
+        ACL: "public-read",
+        ContentType: file.mimetype,
+      })
+    );
+
+    const link = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
+
+    res.status(200).json(link);
+  }
+})
+
 //робота з групами кінець
 
 
@@ -401,6 +456,8 @@ app.get('/expenses', async (req, res) =>{
 
   console.log('expense=', response)
   console.log('oweSecondName=', response.owe[1].user.displayName)
+
+  res.status(200).json(response)
   
 })
 
