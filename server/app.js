@@ -17,7 +17,8 @@ const expensedb = require("./models/Expense");
 const { populate } = require("dotenv");
 const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
 const uniqid = require("uniqid");
-const fileUpload = require('express-fileupload');
+const fileUpload = require("express-fileupload");
+const convert = require('heic-convert');
 
 app.use(
   cors({
@@ -36,7 +37,7 @@ app.use(
   })
 );
 
-app.use(fileUpload())
+app.use(fileUpload());
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -209,9 +210,6 @@ app.put("/friendrequest", async (req, res) => {
 });
 // робота з друзями кінець
 
-
-
-
 //робота з профілем користувача початок
 //Додавання валюти в список
 app.post("/profile/addCurency", async (req, res) => {
@@ -249,18 +247,27 @@ app.post("/profile/addLanguage", async (req, res) => {
 
 //Отримати список мов та валют а також стандартних юзерських мови валюити та картки
 app.get("/profile/info", async (req, res) => {
-
   const userId = req.query.userId;
 
   const curency = await curencydb.find();
   const language = await languagedb.find();
 
-  const user = await userdb.findOne({_id: userId}).populate("curency language")
-  const defCurency = user?.curency?.curencyValue
-  const defLanguage = user?.language?.langValue
-  const defCardNumber = user?.cardNumber
+  const user = await userdb
+    .findOne({ _id: userId })
+    .populate("curency language");
+  const defCurency = user?.curency?.curencyValue;
+  const defLanguage = user?.language?.langValue;
+  const defCardNumber = user?.cardNumber;
 
-  res.status(200).json({ curency: curency, language: language, defCurency, defLanguage, defCardNumber });
+  res
+    .status(200)
+    .json({
+      curency: curency,
+      language: language,
+      defCurency,
+      defLanguage,
+      defCardNumber,
+    });
 });
 
 //зберегти налаштування валюти валюти та номеру картки
@@ -306,13 +313,13 @@ app.put("/profile/settings", async (req, res) => {
 app.post("/group", async (req, res) => {
   const userId = req.body.userId;
   const groupName = req.body.groupName;
-  
-  const groupImage = req.body.groupImage || '';
+
+  const groupImage = req.body.groupImage || "";
 
   const newGroup = await groupdb.create({
     name: groupName,
     image: groupImage,
-    members: [userId]
+    members: [userId],
   });
   const resp = await newGroup.save();
   if (resp._id) {
@@ -324,6 +331,17 @@ app.post("/group", async (req, res) => {
 
 //отримати списк груп
 app.get("/group", async (req, res) => {
+  const groupId = req.query.groupId;
+
+  const group = await groupdb
+    .findOne({ _id: groupId })
+    .populate("members", "_id displayName image");
+
+  res.status(200).json(group);
+});
+
+//отримати списк груп
+app.get("/groupAll", async (req, res) => {
   const userId = req.query.userId;
 
   const groups = await groupdb.find({ members: userId });
@@ -343,61 +361,81 @@ app.put("/group", async (req, res) => {
     { name: name, image: image },
     { new: true }
   );
-  
+
   if (updatedGroup._id) {
     res.status(200).send({ message: "Група оновлена" });
   } else {
     res.status(404).send({ message: "Група не оновлена" });
   }
-})
+});
 
 // видалити групу
 app.delete("/group", async (req, res) => {
-  const groupId = req.query.groupId; 
+  const groupId = req.query.groupId;
 
-  const response = await groupdb.deleteOne({_id: groupId})
+  const response = await groupdb.deleteOne({ _id: groupId });
 
   if (response.deletedCount == 1) {
     res.status(200).json({ message: "Група видалена" });
   } else {
     res.status(404).json({ message: "Група не видалена" });
   }
-})
+});
 //додавання учасника до групи
 app.post("/group/members", async (req, res) => {
   const groupId = req.body.groupId;
   const userId = req.body.userId;
 
-  const updatedGroup = await groupdb.findOneAndUpdate(
-    { _id: groupId },
-    { $push: { members: userId } },
-    { new: true }
-  );
-  if (updatedGroup._id){
-    res.status(200).json({ message: 'Учасник доданий'})
-  }else{
-    res.status(404).json({message: 'Учасник не доданий'})
+  const group = await groupdb.findOne({ _id: groupId });
+  if (group.members.includes(userId)) {
+    res.status(200).json({ message: "Учасник вже доданий", warning: true });
+  } else {
+
+    const updatedGroup = await groupdb.findOneAndUpdate(
+      { _id: groupId },
+      { $push: { members: userId } },
+      { new: true }
+    );
+    if (updatedGroup._id) {
+      res.status(200).json({ message: "Учасник доданий" });
+    } else {
+      res.status(404).json({ message: "Учасник не доданий" });
+    }
   }
-})
+});
 //видалення учасника з групи
-app.delete('/group/members', async (req, res)=>{
+app.delete("/group/members", async (req, res) => {
   const groupId = req.query.groupId;
-  const deleteuserId = req.query.delUserId
+  const deleteuserId = req.query.delUserId;
 
-  const response = await groupdb.updateOne({_id: groupId},{$pull: { members: deleteuserId}})
-  if (response.modifiedCount === 1){
-    res.status(200).json({message: 'Учасник видалений'})
-  }else{
-    res.status(404).json({message: 'Учасник не видалений'})
+  const response = await groupdb.updateOne(
+    { _id: groupId },
+    { $pull: { members: deleteuserId } }
+  );
+
+  if (response.modifiedCount === 1) {
+    res.status(200).json({ message: "Учасник видалений" });
+  } else {
+    res.status(404).json({ message: "Учасник не видалений" });
   }
-})
+});
 //отримати посилання на картинку від aws
-app.post('/group/avatar', async (req, res)=>{
+app.post("/group/avatar", async (req, res) => {
+  const file = req.files.file;
+  console.log('file',file);
 
-  const file = req.files.file
+  if(file.mimetype.includes('heic') || file.mimetype.includes('heif')){
+    const changedBuffer = await convert({
+      buffer: file.data, // the HEIC file buffer
+      format: 'JPEG',      // output format
+      quality: 1           // the jpeg compression quality, between 0 and 1
+    })
+    file.data = changedBuffer
 
-  if(file){
+    console.log('changed buffer', file)
+  }
 
+  if (file) {
     const s3Client = new S3Client({
       region: "eu-north-1",
       credentials: {
@@ -425,41 +463,42 @@ app.post('/group/avatar', async (req, res)=>{
       })
     );
 
-    const link = "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
+    const link =
+      "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
 
     res.status(200).json(link);
   }
-})
+});
 
 //робота з групами кінець
 
-
 //робота з витратами початок
 
-app.post('/expenses', async (req, res) =>{
-  const expenseData = req.body
+app.post("/expenses", async (req, res) => {
+  const expenseData = req.body;
 
-  const newExpense = await expensedb.create(expenseData)
-  const response = await newExpense.save()
+  const newExpense = await expensedb.create(expenseData);
+  const response = await newExpense.save();
 
-  if(response._id){
-    res.status(200).json({message: 'Витрата створена'})
-  }else{
-    res.status(404).json({message: 'Учасник не видалений'})
+  if (response._id) {
+    res.status(200).json({ message: "Витрата створена" });
+  } else {
+    res.status(404).json({ message: "Учасник не видалений" });
   }
-})
+});
 
-app.get('/expenses', async (req, res) =>{
-  const expenseId = req.query.expenseId 
+app.get("/expenses", async (req, res) => {
+  const expenseId = req.query.expenseId;
 
-  const response = await expensedb.findOne({_id: expenseId}).populate('owe.user land.user group')
+  const response = await expensedb
+    .findOne({ _id: expenseId })
+    .populate("owe.user land.user group");
 
-  console.log('expense=', response)
-  console.log('oweSecondName=', response.owe[1].user.displayName)
+  console.log("expense=", response);
+  console.log("oweSecondName=", response.owe[1].user.displayName);
 
-  res.status(200).json(response)
-  
-})
+  res.status(200).json(response);
+});
 
 //робота з витратами кінець
 

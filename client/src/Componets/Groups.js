@@ -6,6 +6,7 @@ import moment from "moment";
 import "moment/locale/uk";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faImage, faPlus, faUsers, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { Link } from "react-router-dom";
 
 const Groups = () => {
   const { userdata } = useContext(AuthContext);
@@ -18,7 +19,7 @@ const Groups = () => {
   const getGroups = async () => {
     try {
       const response = await axios.get(
-        process.env.REACT_APP_BACK_URL + "/group",
+        process.env.REACT_APP_BACK_URL + "/groupAll",
         {
           withCredentials: true,
           params: {
@@ -141,7 +142,7 @@ const Groups = () => {
         </div>
         {groups.length > 0 &&
           groups.map((group, index) => (
-            <div key={index} className="blockEl bg-slate-800">
+            <Link key={index} to={`/profile/groups/${group._id}`} className="block blockEl bg-slate-800">
               <div className="font-xl font-bold px-2 flex gap-3 items-center">
                 {moment(group.createdAt).locale("uk").format("DD MMM YYYY")}
                 {group.image.length > 0 ? (
@@ -156,7 +157,7 @@ const Groups = () => {
 
                 {group.name}
               </div>
-            </div>
+            </Link>
           ))}
         {!groups.length && (
           <div className="blockEl bg-slate-800">

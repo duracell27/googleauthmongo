@@ -11,6 +11,7 @@ import Account from './Componets/Account'
 import { createContext, useEffect, useState } from 'react'
 import axios from 'axios'
 import  { Toaster } from 'react-hot-toast';
+import GroupPage from './Componets/GroupPage'
 
 export const AuthContext = createContext()
 
@@ -46,6 +47,7 @@ function App() {
         <Route path='/profile' element={<Profile/>}>
           <Route path='friends' element={<Friends/>}/>
           <Route path='groups' element={<Groups/>}/>
+          <Route path='groups/:id' element={<GroupPage/>}/>
           <Route path='addexpense' element={<AddExpense/>}/>
           <Route path='account' element={<Account/>}/>
         </Route>
