@@ -1,4 +1,5 @@
 import {
+  faImage,
   faPlus,
   faUserPlus,
   faUsers,
@@ -14,10 +15,12 @@ import { AuthContext } from "../App";
 import ExpenseForm from "./ExpenseForm";
 
 const GroupPage = () => {
+  //groupId
   const { id } = useParams();
   const { userdata } = useContext(AuthContext);
 
   const [friends, setFriends] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [groupInfo, setGroupInfo] = useState(null);
 
   const [memberSearch, setMemberSearch] = useState("");
@@ -59,6 +62,25 @@ const GroupPage = () => {
       );
       if (response.status === 200) {
         setGroupInfo(response.data);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data);
+    }
+  };
+  // отримати всі витрати групи
+  const getExpenses = async () => {
+    try {
+      const response = await axios.get(
+        process.env.REACT_APP_BACK_URL + "/expensesAll",
+        {
+          withCredentials: true,
+          params: {
+            groupId: id,
+          },
+        }
+      );
+      if (response.status === 200) {
+        setExpenses(response.data);
       }
     } catch (error) {
       toast.error(error?.response?.data);
@@ -152,6 +174,29 @@ const GroupPage = () => {
       toast.error(error?.response?.data);
     }
   };
+  // розрахунок суми по витраті для користувача, винен він чи винні йому
+  function calculateNetAmount(transactionObject, userId) {
+    let landSum = 0;
+    let oweSum = 0;
+
+    // Iterate through the "land" array and sum up the amounts paid by the user
+    transactionObject.land.forEach((land) => {
+      if (land.user._id === userId) {
+        landSum += land.sum;
+      }
+    });
+
+    // Iterate through the "owe" array and sum up the amounts owed by the user
+    transactionObject.owe.forEach((owe) => {
+      if (owe.user._id === userId) {
+        oweSum += owe.sum;
+      }
+    });
+
+    // Calculate the net amount
+    return landSum - oweSum;
+  }
+
   // при зміні поля пошуку, шукаємо користувачів
   useEffect(() => {
     searchUsers();
@@ -161,7 +206,10 @@ const GroupPage = () => {
   useEffect(() => {
     getGroupInfo();
     getFriends();
+    getExpenses();
   }, []);
+
+  console.log(expenses);
 
   return (
     <div className="bg-green-600 h-screen">
@@ -206,14 +254,58 @@ const GroupPage = () => {
             className="bg-slate-800 rounded-full p-2 px-4"
             onClick={() => setAddExpensePopup((prev) => !prev)}
           >
-            <FontAwesomeIcon icon={addExpensePopup ? faXmark : faPlus} /> <span>Додати витрату</span>
+            <FontAwesomeIcon icon={addExpensePopup ? faXmark : faPlus} />
+            <span>Додати витрату</span>
           </button>
+          {/* кнопка створити групу */}
           {addExpensePopup && (
-            <ExpenseForm groupId={id} members={groupInfo.members}/>
+            <ExpenseForm
+              groupId={id}
+              members={groupInfo.members}
+              setAddExpensePopup={setAddExpensePopup}
+            />
           )}
+          {/* вивід всіх витрати в групі */}
+          {expenses.map((expense, index) => (
+            <div
+              key={index}
+              className="blockEl bg-slate-800 flex items-center gap-3"
+            >
+              <span>
+                {moment(expense?.createdAt).locale("uk").format("DD MMM YYYY")}
+              </span>
+              {expense.image.length > 0 ? (
+              <img
+                src={expense.image}
+                className="w-16 h-16 rounded-full"
+                alt="expenseimg"
+              />
+            ):(<span className="flex justify-center items-center bg-slate-600 w-16 h-16 rounded-full">
+              <FontAwesomeIcon icon={faImage} />
+            </span>)}
+              {/* <img
+                src={expense.image}
+                className=""
+                alt="exenseimage"
+              /> */}
+              <span className="grow">{expense.name}</span>
+              <span
+                className={`${
+                  calculateNetAmount(expense, userdata?._id) < 0
+                    ? "text-red-500"
+                    : "text-green-400"
+                }`}
+              >
+                <strong>
+                  {calculateNetAmount(expense, userdata?._id)} {" "}
+                  {userdata?.curency?.curencyValue}
+                </strong>
+              </span>
+            </div>
+          ))}
         </div>
-        {/* секція з витратами кінець*/}
 
+        {/* секція з витратами кінець*/}
 
         {/* секція з учасниками групи */}
         <div className="blockEl bg-green-700 flex flex-col">

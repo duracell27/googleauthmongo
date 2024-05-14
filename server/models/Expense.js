@@ -6,7 +6,9 @@ const expenseSchema = new mongoose.Schema({
     price: Number,
     group: { type: mongoose.Schema.Types.ObjectId, ref: 'groups' },
     land: [{ user: {type: mongoose.Schema.Types.ObjectId, ref: 'users'}, sum: Number }],
-    owe: [{ user: {type: mongoose.Schema.Types.ObjectId, ref: 'users'}, sum: Number }]
+    owe: [{ user: {type: mongoose.Schema.Types.ObjectId, ref: 'users'}, sum: Number }],
+    oweType: String,
+    landMulti: Boolean
 },{timestamps:true})
 
 const expensedb = new mongoose.model('expenses', expenseSchema)

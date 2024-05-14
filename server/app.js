@@ -52,7 +52,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await userdb.findOne({ googleId: profile.id });
+        let user = await userdb.findOne({ googleId: profile.id }).populate("curency");
         if (!user) {
           user = new userdb({
             googleId: profile.id,
@@ -102,8 +102,13 @@ app.get(
 );
 // робота з логіном, вхід і логаут і робота з юзерами початок
 app.get("/login/success", async (req, res) => {
+
+  //пофіксив щоб брались нові настройки при зберіганні валюти
+  let user = await userdb.findOne({ _id: req?.user?._id }).populate("curency language");
+  
+
   if (req.user) {
-    res.status(200).send({ message: "user Login", user: req.user });
+    res.status(200).send({ message: "user Login", user: user });
   } else {
     res.status(404).send({ message: "user not authenticated" });
   }
@@ -420,7 +425,7 @@ app.delete("/group/members", async (req, res) => {
   }
 });
 //отримати посилання на картинку від aws
-app.post("/group/avatar", async (req, res) => {
+app.post("/aws/getIngameUrl", async (req, res) => {
   const file = req.files.file;
   console.log('file',file);
 
@@ -473,7 +478,7 @@ app.post("/group/avatar", async (req, res) => {
 //робота з групами кінець
 
 //робота з витратами початок
-
+//створення витрати
 app.post("/expenses", async (req, res) => {
   const expenseData = req.body;
 
@@ -486,7 +491,23 @@ app.post("/expenses", async (req, res) => {
     res.status(404).json({ message: "Учасник не видалений" });
   }
 });
+//редагування витрати
+app.put('/expenses', async (req, res) => {
+  const expenseId = req.body.expenseId;
 
+  const updatedExpense = await expensedb.findOneAndUpdate(
+    { _id: expenseId },
+    req.body,
+    { new: true }
+  );
+
+  if (updatedExpense._id) {
+    res.status(200).json({ message: "Витрата оновлена" });
+  } else {
+    res.status(404).json({ message: "Витрата не оновлена" });
+  }
+})
+//отримати 1 витрату по ід
 app.get("/expenses", async (req, res) => {
   const expenseId = req.query.expenseId;
 
@@ -496,6 +517,16 @@ app.get("/expenses", async (req, res) => {
 
   console.log("expense=", response);
   console.log("oweSecondName=", response.owe[1].user.displayName);
+
+  res.status(200).json(response);
+});
+// отримати всі витрати по ід групи
+app.get("/expensesAll", async (req, res) => {
+  const groupId = req.query.groupId;
+
+  const response = await expensedb
+    .find({ group: groupId })
+    .populate("owe.user land.user group");
 
   res.status(200).json(response);
 });

@@ -37,7 +37,7 @@ function App() {
 
   return (
     <>
-    <AuthContext.Provider value={{userdata, setUserdata}}>
+    <AuthContext.Provider value={{userdata, setUserdata, getUser}}>
     <Toaster/>
     <Headers/>
       {userdata._id ? (

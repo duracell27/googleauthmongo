@@ -42,10 +42,10 @@ const Groups = () => {
     data.append("file", file);
 
     if (file) {
-      console.log("tut");
+      
       try {
         const response = await axios.post(
-          process.env.REACT_APP_BACK_URL + "/group/avatar",
+          process.env.REACT_APP_BACK_URL + "/aws/getIngameUrl",
           data,
           {
             withCredentials: true,
