@@ -5,11 +5,12 @@ import { AuthContext } from "../App";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const ExpenseForm = ({ groupId, members, setAddExpensePopup }) => {
+const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses, existingExpense }) => {
   const { userdata } = useContext(AuthContext);
 
+
   const initExpenseState = {
-    name: "",
+    name: "" ,
     image: "",
     price: "",
     group: groupId,
@@ -18,6 +19,8 @@ const ExpenseForm = ({ groupId, members, setAddExpensePopup }) => {
     oweType: "equaly",
     owe: [],
   };
+  
+  
 
   const [expense, setExpense] = useState(initExpenseState);
   const [expenseStep, setExpenseStep] = useState(1);
@@ -200,6 +203,7 @@ const ExpenseForm = ({ groupId, members, setAddExpensePopup }) => {
           toast.success("Витрата створена");
           setExpense(initExpenseState);
           setAddExpensePopup(false);
+          getExpenses()
         }
       })
       .catch((error) => {
@@ -224,7 +228,7 @@ const ExpenseForm = ({ groupId, members, setAddExpensePopup }) => {
                 {expense.image.length > 0 && (
                   <img
                     src={expense.image}
-                    className="object-cover w-20 h-20"
+                    className="object-cover rounded-full w-20 h-20"
                     alt="expenseimg"
                   />
                 )}

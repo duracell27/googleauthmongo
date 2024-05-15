@@ -349,9 +349,12 @@ app.get("/group", async (req, res) => {
 app.get("/groupAll", async (req, res) => {
   const userId = req.query.userId;
 
-  const groups = await groupdb.find({ members: userId });
+  const groups = await groupdb.find({ members: userId })
+  .populate("expenses members")
 
   res.status(200).json(groups);
+
+  
 });
 
 //редагування групи: імя та картинка
@@ -486,6 +489,13 @@ app.post("/expenses", async (req, res) => {
   const response = await newExpense.save();
 
   if (response._id) {
+   
+    const updatedGroup = await groupdb.findOneAndUpdate(
+      { _id: response.group },
+      { $push: { expenses: response._id } },
+      { new: true }
+    );
+    
     res.status(200).json({ message: "Витрата створена" });
   } else {
     res.status(404).json({ message: "Учасник не видалений" });
@@ -526,11 +536,30 @@ app.get("/expensesAll", async (req, res) => {
 
   const response = await expensedb
     .find({ group: groupId })
-    .populate("owe.user land.user group");
+    .populate({path: "group"})
+    .populate({path: "owe.user"})
+    .populate({
+      path: 'land.user',
+      populate: {
+          path: 'curency',
+          model: 'curency' // Assuming 'curency' is the model name for currencySchema
+      }
+  }).sort({"createdAt": -1})
 
   res.status(200).json(response);
 });
-
+// отримати суму всіх витрат для головної сторінки
+app.get("/expensesSum", async (req, res) => {
+  const response = await expensedb.aggregate([
+    {
+      $group: {
+        _id: null,
+        totalPrice: { $sum: '$price' }
+      }
+    }
+  ])
+  res.status(200).json(response[0].totalPrice);
+})
 //робота з витратами кінець
 
 //test
