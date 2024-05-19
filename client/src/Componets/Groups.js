@@ -61,7 +61,7 @@ const Groups = () => {
         );
         if (response.status === 200) {
           setGroupUploadAvatar(response.data);
-          console.log(response);
+      
         }
       } catch (error) {
         toast.error(error?.response?.data);
@@ -115,8 +115,6 @@ const Groups = () => {
   useEffect(() => {
     getGroups();
   }, []);
-
-  // console.log(groups);
 
   return (
     <div className="bg-green-600 h-screen">

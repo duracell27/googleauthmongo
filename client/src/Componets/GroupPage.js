@@ -28,7 +28,7 @@ const GroupPage = () => {
 
   const [addMembersPopup, setAddMembersPopup] = useState(false);
   const [addExpensePopup, setAddExpensePopup] = useState(false);
-  console.log(expenses);
+  
   //   отримуємо список друзів щоб можна було легко додати до групи
   const getFriends = async () => {
     try {
@@ -127,7 +127,7 @@ const GroupPage = () => {
         }
       }
     } catch (error) {
-      //   console.log("sendFriendRequest", error);
+      
       toast.error(error?.response?.data);
     }
   };
@@ -149,7 +149,7 @@ const GroupPage = () => {
         }
       } catch (error) {
         toast.error(error?.response?.data);
-        // console.log("errorSearchUsers", error);
+        
       }
     }
   };

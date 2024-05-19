@@ -57,10 +57,10 @@ const Account = () => {
         getFriends();
         toast.success(response?.data?.message);
       }
-      //   console.log("answerfrReq", response.data);
+     
     } catch (error) {
       toast.error(error?.response?.data);
-      //   console.log("answerfrReq", error);
+      
     }
   };
   //функція для пошуку користувачів, поветає масив юзерів 10шт по пошуковому запиті
@@ -81,7 +81,7 @@ const Account = () => {
         }
       } catch (error) {
         toast.error(error?.response?.data);
-        // console.log("errorSearchUsers", error);
+        
       }
     }
   };
@@ -101,7 +101,7 @@ const Account = () => {
         toast.error(response?.data?.message);
       }
     } catch (error) {
-      //   console.log("sendFriendRequest", error);
+  
       toast.error(error?.response?.data);
     }
   };

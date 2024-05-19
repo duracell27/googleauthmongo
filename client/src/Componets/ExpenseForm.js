@@ -1,16 +1,23 @@
-import { faImage, faReceipt } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faImage, faReceipt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../App";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses, existingExpense }) => {
+const ExpenseForm = ({
+  groupId = "",
+  members = [],
+  setAddExpensePopup,
+  getExpenses,
+  existingExpense,
+  isEdit,
+}) => {
   const { userdata } = useContext(AuthContext);
 
-
+  
   const initExpenseState = {
-    name: "" ,
+    name: "",
     image: "",
     price: "",
     group: groupId,
@@ -19,11 +26,27 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
     oweType: "equaly",
     owe: [],
   };
-  
-  
 
   const [expense, setExpense] = useState(initExpenseState);
-  const [expenseStep, setExpenseStep] = useState(1);
+  // є 3 степи, 1,2,3, але для режиму перегляну є степ 4 коли відображаються всі етапи зразу
+  const [expenseStep, setExpenseStep] = useState(4);
+
+  // коли прилітає існуюча витрата то пустий стейт заміняється на заповнений даними
+  useEffect(() => {
+    if (existingExpense) {
+      setExpense(existingExpense);
+    }
+  }, [existingExpense]);
+  // реагує на змінну редагування, міняє інтерфес,і додає кнопки зберегти і так далі..
+  useEffect(() => {
+    if (isEdit) {
+      setExpenseStep(1);
+    } else {
+      setExpenseStep(4);
+    }
+  }, [isEdit]);
+
+
 
   //отримати полисання на фото групи від авс
   const expenseAvatarChange = async (e) => {
@@ -47,7 +70,6 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
         if (response.status === 200) {
           setExpense({ ...expense, image: response.data });
 
-          console.log(response);
         }
       } catch (error) {
         toast.error(error?.response?.data);
@@ -56,9 +78,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
   };
   //основна логіка розділення сум тих хто платив і тих хто винен
   const handleCheckbox = (checked, userId, type) => {
-    console.log("checked", checked);
-    console.log("userId", userId);
-    console.log("type", type);
+    
     // основний іф який розділяє роботу з масивом оплат і масивом винних
     if (type === "land") {
       //робота з масивом, якщо одинична оплата
@@ -79,9 +99,10 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
         }
         // видаляємо з масиву оплат якшо чекбокс не нажато
         else if (checked === false) {
+            
           setExpense({
             ...expense,
-            land: expense.land.filter((item) => item.user !== userId),
+            land: expense.land.filter((item) => item.user._id !== userId._id),
           });
         }
       }
@@ -99,7 +120,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
         else if (checked === false) {
           setExpense({
             ...expense,
-            owe: expense.owe.filter((item) => item.user !== userId),
+            owe: expense.owe.filter((item) => item.user._id !== userId._id),
           });
         }
         setExpense((prevExp) => ({
@@ -114,18 +135,18 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
       else if (expense.oweType === "exact") {
         //якщо натиснуто то додати до масиву витрату
         if (checked === true) {
-          console.log("im here");
+          
           setExpense({
             ...expense,
             owe: [...expense.owe, { user: userId, sum: "" }],
           });
-          console.log("im here1");
+        
         }
         //якщо віджато то видалити витрату з масиву
         else if (checked === false) {
           setExpense({
             ...expense,
-            owe: expense.owe.filter((item) => item.user !== userId),
+            owe: expense.owe.filter((item) => item.user._id !== userId._id),
           });
         }
       }
@@ -135,7 +156,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
   const setAllOweFromMembers = () => {
     setExpense({
       ...expense,
-      owe: members.map((member) => ({ user: member._id })),
+      owe: members.map((member) => ({ user: member })),
     });
     setExpense((prevExp) => ({
       ...prevExp,
@@ -178,7 +199,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
     setExpense({
       ...expense,
       land: expense.land.map((item) =>
-        item.user === userId ? { ...item, sum: summ } : item
+        item.user._id === userId ? { ...item, sum: summ } : item
       ),
     });
   };
@@ -187,52 +208,76 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
     setExpense({
       ...expense,
       owe: expense.owe.map((item) =>
-        item.user === userId ? { ...item, sum: summ } : item
+        item.user._id === userId ? { ...item, sum: summ } : item
       ),
     });
   };
   // зберігає в БД всі дані по витраті
   const handleSaveExpense = () => {
-    console.log("expense", expense);
-    axios
-      .post(process.env.REACT_APP_BACK_URL + "/expenses", expense, {
-        withCredentials: true,
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          toast.success("Витрата створена");
-          setExpense(initExpenseState);
-          setAddExpensePopup(false);
-          getExpenses()
-        }
-      })
-      .catch((error) => {
-        toast.error(error?.response?.data);
-      });
+    // якщо сет тайп в режимі едіт то йде редагування витрати
+    if (isEdit) {
+      axios
+        .put(
+          process.env.REACT_APP_BACK_URL + "/expenses",
+          { expense, expenseId: expense._id },
+          {
+            withCredentials: true,
+          }
+        )
+        .then((response) => {
+          if (response.status === 200) {
+            toast.success(response.data.message);
+            // setExpense(initExpenseState);
+            // setAddExpensePopup(false);
+            // getExpenses()
+          }
+        })
+        .catch((error) => {
+          toast.error(error?.response?.data);
+        });
+    }
+    // якщо сет тайп в режимі НЕ едіт то йде створення витрати
+    else {
+      axios
+        .post(process.env.REACT_APP_BACK_URL + "/expenses", expense, {
+          withCredentials: true,
+        })
+        .then((response) => {
+          if (response.status === 200) {
+            toast.success("Витрата створена");
+            setExpense(initExpenseState);
+            setAddExpensePopup(false);
+            getExpenses();
+          }
+        })
+        .catch((error) => {
+          toast.error(error?.response?.data);
+        });
+    }
   };
 
   return (
     <div className="flex blockEl bg-green-500 flex-col gap-5 mt-5">
       {/* перший блок де вносять назву фото так суму початок */}
-      {expenseStep === 1 && (
+      {(expenseStep === 1 || expenseStep === 4) && (
         <div className="blockEl bg-green-700 flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <div className="">
               <label
                 className={`${
-                  expense.image.length > 0
+                  expense?.image?.length > 0
                     ? "p-0 w-20 h-20 rounded-full"
                     : " rounded-full p-6 w-20 h-20 flex justify-center items-center"
                 } bg-gray-800 cursor-pointer`}
               >
-                {expense.image.length > 0 && (
+                {expense?.image?.length > 0 && (
                   <img
                     src={expense.image}
                     className="object-cover rounded-full w-20 h-20"
                     alt="expenseimg"
                   />
                 )}
-                {expense.image.length < 1 && (
+                {expense?.image?.length < 1 && (
                   <div>
                     <FontAwesomeIcon icon={faImage} />
                   </div>
@@ -242,6 +287,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
                   type="file"
                   onChange={expenseAvatarChange}
                   className="hidden"
+                  disabled={!isEdit}
                 />
               </label>
             </div>
@@ -257,6 +303,7 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
                   onChange={(e) =>
                     setExpense({ ...expense, name: e.target.value })
                   }
+                  disabled={!isEdit}
                 />
               </label>
 
@@ -271,27 +318,29 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
                   onChange={(e) =>
                     setExpense({ ...expense, price: e.target.value })
                   }
+                  disabled={!isEdit}
                 />
               </label>
             </div>
           </div>
-
-          <div className="flex gap-2">
-            <button
-              disabled={!(expense.name !== "" && expense.price !== "")}
-              onClick={() => setExpenseStep(2)}
-              className="bg-slate-800 p-2 cursor-pointer rounded-full px-3 disabled:bg-slate-500"
-            >
-              Далі
-            </button>
-          </div>
+          {expenseStep !== 4 && (
+            <div className="flex gap-2">
+              <button
+                disabled={!(expense.name !== "" && expense.price !== "")}
+                onClick={() => setExpenseStep(2)}
+                className="bg-slate-800 p-2 cursor-pointer rounded-full px-3 disabled:bg-slate-500"
+              >
+                Далі
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* перший блок де вносять назву фото так суму кінець*/}
 
       {/* другий блок де визначається хто оплачував початок */}
-      {expenseStep === 2 && (
+      {(expenseStep === 2 || expenseStep === 4) && (
         <div className="blockEl bg-green-700 flex flex-col gap-2">
           <p className="font-bold">Хто оплачував?</p>
           <div className="flex gap-5">
@@ -312,11 +361,27 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
             </button>
           </div>
           {expense.landMulti && (
-            <span>залишилось розділити: <span className={`${calculateMultipleSumm()>0?'text-green-500': calculateMultipleSumm()==0 ?'text-white': 'text-red-500'} font-bold`}>{calculateMultipleSumm()}</span> </span>
+            <span>
+              залишилось розділити:{" "}
+              <span
+                className={`${
+                  calculateMultipleSumm() > 0
+                    ? "text-green-500"
+                    : calculateMultipleSumm() == 0
+                    ? "text-white"
+                    : "text-red-500"
+                } font-bold`}
+              >
+                {calculateMultipleSumm()}
+              </span>{" "}
+            </span>
           )}
           <div className="blocEl flex flex-col items-start gap-2">
             {members.map((member, index) => (
-              <div key={index} className="flex items-center justify-start gap-2 bg-green-800 p-1 rounded-full">
+              <div
+                key={index}
+                className="flex items-center justify-start gap-2 bg-green-800 p-1 rounded-full"
+              >
                 <img
                   src={member?.image}
                   alt="avatar"
@@ -325,66 +390,89 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
                 <span>{member.displayName}</span>
                 {expense.landMulti ? (
                   <>
+                  <div className="relative">
                     <input
                       onChange={(e) => {
-                        handleCheckbox(e.target.checked, member._id, "land");
+                        handleCheckbox(e.target.checked, member, "land");
                       }}
                       defaultChecked={expense.land.some(
-                        (obj) => obj.user === member._id
+                        (obj) => obj.user._id === member._id
                       )}
                       type="checkbox"
                       name="land"
+                      disabled={!isEdit}
+                      className="hidden peer "
+                      id={`landmulti${member._id}`}
                     />
+                    <label htmlFor={`landmulti${member._id}`} className="bg-transparent block w-5 h-5 rounded-lg border mr-2 border-white peer-checked:bg-slate-800" ></label>
+                    <span className="hidden pointer-events-none -top-[2px] left-[3px] absolute peer-checked:block rounded-full"><FontAwesomeIcon className=" w-4 h-4" icon={faCheck}/></span>
+                    </div>
 
                     <input
                       type="number"
                       value={
-                        expense.land.filter((obj) => obj.user === member._id)[0]
-                          ?.sum
+                        expense.land.filter(
+                          (obj) => obj.user._id === member._id
+                        )[0]?.sum
                       }
+                      disabled={!isEdit}
                       onChange={(e) => addSumToLand(e.target.value, member._id)}
                       placeholder="Сума"
                       className="bg-slate-800 indent-1 rounded-lg w-14 mr-2 outline-none disabled:bg-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </>
                 ) : (
-                  <input 
-                    className="mr-3"
-                    onChange={(e) =>
-                      handleCheckbox(e.target.checked, member._id, "land")
-                    }
-                    type="radio"
-                    defaultChecked={expense.land.some(
-                      (obj) => obj.user === member._id
-                    )}
-                    name="land"
-                  />
+                  <div className="relative">
+
+                    <input
+                      id={`landsingle${member._id}`}
+                      className="mr-3 hidden peer"
+                      onChange={(e) =>
+                        handleCheckbox(e.target.checked, member, "land")
+                      }
+                      type="radio"
+                      disabled={!isEdit}
+                      checked={expense.land.some(
+                        (obj) => obj?.user?._id === member._id
+                      )}
+                      name="land"
+                      
+                    />
+                    
+                        
+                    <label htmlFor={`landsingle${member._id}`} className="bg-transparent block w-5 h-5 rounded-full border mr-2 border-white peer-checked:bg-slate-800" ></label>
+                    <span className="hidden pointer-events-none -top-[2px] left-[3px] absolute peer-checked:block rounded-full"><FontAwesomeIcon className="z-10 w-4 h-4" icon={faCheck}/></span>
+                    
+                    
+                  </div>
                 )}
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setExpenseStep(1)}
-              className="bg-slate-800 p-2 cursor-pointer rounded-full px-3"
-            >
-              назад
-            </button>
-            <button
-              disabled={calculateMultipleSumm() !== 0}
-              onClick={() => setExpenseStep(3)}
-              className="bg-slate-800 p-2 cursor-pointer rounded-full px-3 disabled:bg-slate-600"
-            >
-              далі
-            </button>
-          </div>
+          {expenseStep !== 4 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setExpenseStep(1)}
+                className="bg-slate-800 p-2 cursor-pointer rounded-full px-3"
+              >
+                назад
+              </button>
+              <button
+                disabled={calculateMultipleSumm() !== 0}
+                onClick={() => setExpenseStep(3)}
+                className="bg-slate-800 p-2 cursor-pointer rounded-full px-3 disabled:bg-slate-600"
+              >
+                далі
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* другий блок де визначається хто оплачував кінець */}
 
       {/* третій блок де визначається хто скілки винен початок */}
-      {expenseStep === 3 && (
+      {(expenseStep === 3 || expenseStep === 4) && (
         <div className="blockEl bg-green-700 flex flex-col gap-2">
           <p className="font-bold">як розділити</p>
           <div className="flex gap-5">
@@ -416,25 +504,46 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
             <div className="flex flex-col items-start">
               <span>частка кожного: {calculateEquilyOweSums()}</span>
               <div className="flex gap-2 items-center my-1">
-
-              <button onClick={setAllOweFromMembers} className="bg-slate-800 p-2 rounded-full px-3 ">
-                вибрати всіх
-              </button>
-              <button onClick={deleteAllFromExpOwe} className="bg-slate-800 p-2 rounded-full px-3 ">
-                видалити всіх
-              </button>
+                <button
+                  onClick={setAllOweFromMembers}
+                  className="bg-slate-800 p-2 rounded-full px-3 "
+                >
+                  вибрати всіх
+                </button>
+                <button
+                  onClick={deleteAllFromExpOwe}
+                  className="bg-slate-800 p-2 rounded-full px-3 "
+                >
+                  видалити всіх
+                </button>
               </div>
             </div>
           )}
           {expense.oweType === "exact" && (
             <div className="flex flex-col items-start">
-              <span>залишилось розділити: <span className={`${calculateRemainingAmount()>0?'text-green-500': calculateRemainingAmount()==0 ?'text-white': 'text-red-500'} font-bold`}>{calculateRemainingAmount()}</span></span>
+              <span>
+                залишилось розділити:{" "}
+                <span
+                  className={`${
+                    calculateRemainingAmount() > 0
+                      ? "text-green-500"
+                      : calculateRemainingAmount() == 0
+                      ? "text-white"
+                      : "text-red-500"
+                  } font-bold`}
+                >
+                  {calculateRemainingAmount()}
+                </span>
+              </span>
             </div>
           )}
 
           <div className="blocEl flex flex-col items-start gap-2">
             {members.map((member, index) => (
-              <div key={index} className="flex items-center justify-start gap-2 bg-green-800 p-1 rounded-full">
+              <div
+                key={index}
+                className="flex items-center justify-start gap-2 bg-green-800 p-1 rounded-full"
+              >
                 <img
                   src={member?.image}
                   alt="avatar"
@@ -443,74 +552,93 @@ const ExpenseForm = ({ groupId ='', members=[], setAddExpensePopup, getExpenses,
                 <span>{member.displayName}</span>
                 {expense.oweType === "exact" ? (
                   <>
+                  <div className="relative">
                     <input
-                      id={`checkboxforOwe${member._id}`}
+                      className="mr-3 hidden peer"
+                      id={`oweex${member._id}`}
                       onChange={(e) => {
-                        handleCheckbox(e.target.checked, member._id, "owe");
+                        handleCheckbox(e.target.checked, member, "owe");
                       }}
                       defaultChecked={expense.owe.some(
-                        (obj) => obj.user === member._id
+                        (obj) => obj.user.id === member._id
                       )}
                       type="checkbox"
                       name="owe"
+                      disabled={!isEdit}
                     />
+                    <label htmlFor={`oweex${member._id}`} className="bg-transparent block w-5 h-5 rounded-lg border mr-2 border-white peer-checked:bg-slate-800" ></label>
+                    <span className="hidden pointer-events-none -top-[2px] left-[3px] absolute peer-checked:block rounded-full"><FontAwesomeIcon className="z-10 w-4 h-4" icon={faCheck}/></span>
 
+</div>
                     <input
                       type="number"
                       value={
-                        expense.owe.filter((obj) => obj.user === member._id)[0]
-                          ?.sum
+                        expense.owe.filter(
+                          (obj) => obj.user._id === member._id
+                        )[0]?.sum
                       }
+                      disabled={!isEdit}
                       onChange={(e) => addSumToOwe(e.target.value, member._id)}
                       placeholder="Сума"
                       className="bg-slate-800 indent-1 rounded-lg w-14 mr-2 outline-none disabled:bg-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </>
                 ) : (
+                    <div className="relative">
                   <input
-                  className="mr-3"
+                    
                     onChange={(e) =>
-                      handleCheckbox(e.target.checked, member._id, "owe")
+                      handleCheckbox(e.target.checked, member, "owe")
                     }
+                    disabled={!isEdit}
                     type="checkbox"
-                    checked={expense.owe.some((obj) => obj.user === member._id)}
+                    checked={expense.owe.some(
+                      (obj) => obj.user._id === member._id
+                    )}
                     name="owe"
-
+                    className="mr-3 hidden peer"
+                      id={`oweeq${member._id}`}
                   />
+                  <label htmlFor={`oweeq${member._id}`} className="bg-transparent block w-5 h-5 rounded-lg border mr-2 border-white peer-checked:bg-slate-800" ></label>
+                    <span className="hidden pointer-events-none -top-[2px] left-[3px] absolute peer-checked:block rounded-full"><FontAwesomeIcon className="z-10 w-4 h-4" icon={faCheck}/></span></div>
                 )}
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setExpenseStep(2)}
-              className="bg-slate-800 p-2 cursor-pointer rounded-full px-3"
-            >
-              назад
-            </button>
-          </div>
+          {expenseStep !== 4 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setExpenseStep(2)}
+                className="bg-slate-800 p-2 cursor-pointer rounded-full px-3"
+              >
+                назад
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* третій блок де визначається хто скілки винен кінець */}
 
       {/* кнопка зберігання */}
-      <button
-        disabled={
-          !(
-            expense.owe.length > 0 &&
-            expense.land.length > 0 &&
-            expense.name !== "" &&
-            expense.price !== "" &&
-            calculateRemainingAmount() == 0 &&
-            calculateMultipleSumm() == 0
-          )
-        }
-        className="bg-slate-800 rounded-full p-2 px-4 cursor-pointer disabled:bg-slate-500"
-        onClick={handleSaveExpense}
-      >
-        зберегти
-      </button>
+      {expenseStep !== 4 && (
+        <button
+          disabled={
+            !(
+              expense.owe.length > 0 &&
+              expense.land.length > 0 &&
+              expense.name !== "" &&
+              expense.price !== "" &&
+              calculateRemainingAmount() == 0 &&
+              calculateMultipleSumm() == 0
+            )
+          }
+          className="bg-slate-800 rounded-full p-2 px-4 cursor-pointer disabled:bg-slate-500"
+          onClick={handleSaveExpense}
+        >
+          {isEdit ? "Відредагувати" : "Зберегти"}
+        </button>
+      )}
     </div>
   );
 };

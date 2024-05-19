@@ -430,7 +430,7 @@ app.delete("/group/members", async (req, res) => {
 //отримати посилання на картинку від aws
 app.post("/aws/getIngameUrl", async (req, res) => {
   const file = req.files.file;
-  console.log('file',file);
+  
 
   if(file.mimetype.includes('heic') || file.mimetype.includes('heif')){
     const changedBuffer = await convert({
@@ -440,7 +440,6 @@ app.post("/aws/getIngameUrl", async (req, res) => {
     })
     file.data = changedBuffer
 
-    console.log('changed buffer', file)
   }
 
   if (file) {
@@ -504,17 +503,18 @@ app.post("/expenses", async (req, res) => {
 //редагування витрати
 app.put('/expenses', async (req, res) => {
   const expenseId = req.body.expenseId;
+  const expense = req.body.expense;
 
   const updatedExpense = await expensedb.findOneAndUpdate(
     { _id: expenseId },
-    req.body,
+    expense,
     { new: true }
   );
 
   if (updatedExpense._id) {
-    res.status(200).json({ message: "Витрата оновлена" });
+    res.status(200).json({ message: "Витрата відредагована" });
   } else {
-    res.status(404).json({ message: "Витрата не оновлена" });
+    res.status(404).json({ message: "Витрата не відредагована" });
   }
 })
 //отримати 1 витрату по ід
@@ -523,12 +523,29 @@ app.get("/expenses", async (req, res) => {
 
   const response = await expensedb
     .findOne({ _id: expenseId })
-    .populate("owe.user land.user group");
+    .populate("owe.user land.user")
+    .populate({
+      path: 'group',
+      populate: {
+          path: 'members',
+          model: 'users' // Assuming 'curency' is the model name for currencySchema
+}})
 
-  console.log("expense=", response);
-  console.log("oweSecondName=", response.owe[1].user.displayName);
 
   res.status(200).json(response);
+});
+
+// видалити витрату
+app.delete("/expenses", async (req, res) => {
+  const expenseId = req.query.expenseId;
+
+  const response = await expensedb.deleteOne({ _id: expenseId });
+
+  if (response.deletedCount == 1) {
+    res.status(200).json({ message: "Витрата видалена" });
+  } else {
+    res.status(404).json({ message: "Витрата не видалена" });
+  }
 });
 // отримати всі витрати по ід групи
 app.get("/expensesAll", async (req, res) => {
