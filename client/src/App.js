@@ -28,7 +28,7 @@ function App() {
           withCredentials: true,
         }
       );
-
+      console.log('user', response.data)
       setUserdata(response.data.user);
     } catch (error) {
       console.log("errorHeaders");

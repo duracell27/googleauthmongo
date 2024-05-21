@@ -98,10 +98,14 @@ app.get(
   passport.authenticate("google", {
     successRedirect: process.env.CLIENT_URL + "/profile",
     failureRedirect: process.env.CLIENT_URL + "/login",
-  })
+  }
+
+)
 );
 // робота з логіном, вхід і логаут і робота з юзерами початок
 app.get("/login/success", async (req, res) => {
+
+  console.log('req body', req)
 
   //пофіксив щоб брались нові настройки при зберіганні валюти
   let user = await userdb.findOne({ _id: req?.user?._id }).populate("curency language");
