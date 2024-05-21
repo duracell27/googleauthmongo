@@ -5,8 +5,8 @@ const cors = require("cors");
 require("./db/connection");
 const PORT = 5050;
 //for google auth
-// const session = require("express-session"); тут змінено
- const session = require('cookie-session');
+const session = require("express-session"); //тут змінено
+//  const session = require('cookie-session');
 const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
 const userdb = require("./models/User");
@@ -63,6 +63,7 @@ passport.use(
           });
           await user.save();
         }
+        console.log('User from stragegy', user)
         return done(null, user);
       } catch (error) {
         return done(error, null);
@@ -72,10 +73,12 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
+  console.log('User from serialize', user)
   done(null, user);
 });
 
 passport.deserializeUser((user, done) => {
+  console.log('User from deserialize', user)
   done(null, user);
 });
 
@@ -106,7 +109,7 @@ app.get(
 // робота з логіном, вхід і логаут і робота з юзерами початок
 app.get("/login/success", async (req, res) => {
 
-  console.log('req body', req)
+  
   console.log('req user', req.user)
 
   //пофіксив щоб брались нові настройки при зберіганні валюти
