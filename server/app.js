@@ -5,8 +5,7 @@ const cors = require("cors");
 require("./db/connection");
 const PORT = 5050;
 //for google auth
-const session = require("express-session"); //тут змінено
-//  const session = require('cookie-session');
+const session = require("express-session"); 
 const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
 const userdb = require("./models/User");
@@ -35,6 +34,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    secure: false,
   })
 );
 
