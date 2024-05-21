@@ -107,6 +107,7 @@ app.get(
 app.get("/login/success", async (req, res) => {
 
   console.log('req body', req)
+  console.log('req user', req.user)
 
   //пофіксив щоб брались нові настройки при зберіганні валюти
   let user = await userdb.findOne({ _id: req?.user?._id }).populate("curency language");
