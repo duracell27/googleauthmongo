@@ -36,7 +36,7 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    secure: false,
+    cookie: { maxAge: 86400000 }
   })
 );
 //підля гає видаленню
