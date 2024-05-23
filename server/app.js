@@ -40,8 +40,6 @@ app.use(
   })
 );
 
-app.set('trust proxy', 1);
-
 app.use(fileUpload());
 
 app.use(passport.initialize());
@@ -67,7 +65,7 @@ passport.use(
           });
           await user.save();
         }
-        console.log('User from stragegy', user)
+      
         return done(null, user);
       } catch (error) {
         return done(error, null);
@@ -77,12 +75,12 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  console.log('User from serialize', user)
+  
   done(null, user);
 });
 
 passport.deserializeUser((user, done) => {
-  console.log('User from deserialize', user)
+  
   done(null, user);
 });
 
