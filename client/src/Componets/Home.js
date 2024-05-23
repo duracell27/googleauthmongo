@@ -1,5 +1,6 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 const Home = () => {
 
@@ -7,8 +8,14 @@ const Home = () => {
   
   // отримати суму всіх витрат для головної сторінки
   const getAllExpensesSum = async() =>{
-    const response = await axios.get(process.env.REACT_APP_BACK_URL + '/expensesSum')
-    setTotalSum(response.data)
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACK_URL + '/expensesSum')
+      if(response.status === 200){
+        setTotalSum(response.data)
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message)
+    }
   }
 
   useEffect(()=>{

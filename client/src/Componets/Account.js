@@ -11,7 +11,7 @@ import { AuthContext } from "../App";
 import toast from "react-hot-toast";
 
 const Account = () => {
-  const { userdata, getUser } = useContext(AuthContext);
+  const { userdata} = useContext(AuthContext);
 
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -165,7 +165,7 @@ const Account = () => {
       );
       if (response.status === 200) {
         toast.success(response.data.message);
-        getUser()
+        // getUser()
       }
     } catch (error) {
       toast.error(error?.response?.data);

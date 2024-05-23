@@ -5,7 +5,7 @@ const cors = require("cors");
 require("./db/connection");
 const PORT = 5050;
 //for google auth
-const session = require("express-session"); 
+const session = require("express-session");
 const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
 const userdb = require("./models/User");
@@ -18,7 +18,26 @@ const { populate } = require("dotenv");
 const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
 const uniqid = require("uniqid");
 const fileUpload = require("express-fileupload");
-const convert = require('heic-convert');
+const convert = require("heic-convert");
+const admin = require("firebase-admin");
+// const serviceAccountKey = require("./lendower4-firebase-adminsdk-plz3l-44197a7faf.json")
+const {getAuth} =require("firebase-admin/auth");
+
+admin.initializeApp({
+  credential: admin.credential.cert({
+    "type": process.env.GOOGLE_ADMIN_TYPE,
+    "project_id": process.env.GOOGLE_ADMIN_PROJECT_ID,
+    "private_key_id": process.env.GOOGLE_ADMIN_PRIVATE_KEY_ID,
+    "private_key": process.env.GOOGLE_ADMIN_PRIVATE_KEY,
+    "client_email": process.env.GOOGLE_ADMIN_CLIENT_EMAIL,
+    "client_id": process.env.GOOGLE_ADMIN_CLIENT_ID,
+    "auth_uri": process.env.GOOGLE_ADMIN_AUTH_URI,
+    "token_uri": process.env.GOOGLE_ADMIN_TOKEN_URI,
+    "auth_provider_x509_cert_url": process.env.GOOGLE_ADMIN_AUTH_PROVIDER,
+    "client_x509_cert_url": process.env.GOOGLE_ADMIN_AUTH_CLIENT_CERT,
+    "universe_domain": process.env.GOOGLE_ADMIN_DOMAIN
+  }),
+});
 
 app.use(
   cors({
@@ -30,13 +49,12 @@ app.use(
 
 app.use(express.json());
 
-
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { maxAge: 86400000 , secure: false }
+    cookie: { maxAge: 86400000, secure: false },
   })
 );
 
@@ -55,7 +73,9 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await userdb.findOne({ googleId: profile.id }).populate("curency");
+        let user = await userdb
+          .findOne({ googleId: profile.id })
+          .populate("curency");
         if (!user) {
           user = new userdb({
             googleId: profile.id,
@@ -65,7 +85,7 @@ passport.use(
           });
           await user.save();
         }
-      
+
         return done(null, user);
       } catch (error) {
         return done(error, null);
@@ -75,12 +95,10 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  
   done(null, user);
 });
 
 passport.deserializeUser((user, done) => {
-  
   done(null, user);
 });
 
@@ -104,19 +122,16 @@ app.get(
   passport.authenticate("google", {
     successRedirect: process.env.CLIENT_URL + "/profile",
     failureRedirect: process.env.CLIENT_URL + "/login",
-  }
-
-)
+  })
 );
 // робота з логіном, вхід і логаут і робота з юзерами початок
 app.get("/login/success", async (req, res) => {
-
-  
-  console.log('req user', req.user)
+  console.log("req user", req.user);
 
   //пофіксив щоб брались нові настройки при зберіганні валюти
-  let user = await userdb.findOne({ _id: req?.user?._id }).populate("curency language");
-  
+  let user = await userdb
+    .findOne({ _id: req?.user?._id })
+    .populate("curency language");
 
   if (req.user) {
     res.status(200).send({ message: "user Login", user: user });
@@ -124,6 +139,44 @@ app.get("/login/success", async (req, res) => {
     res.status(404).send({ message: "user not authenticated" });
   }
 });
+
+app.post("/google-auth", async (req, res) => {
+  let {access_token} = req.body
+
+  getAuth().verifyIdToken(access_token).then(async(decodedUser) => {
+    let {email, name, picture} = decodedUser
+    //якщо треаба більшу картинку то розкоментувати рядок нижче
+    // picture = picture.replace('s96-c', 's384-c');
+
+    let user = await userdb.findOne({email:email}).populate("curency language").then(u=>{return u || null}).catch(err =>{
+      return res.status(500).json({message: err.message});
+    } );
+
+    if (user) {
+      if(!user.isGoogleAuth){
+       return res.status(403).send({ message: "Цей акаунт зареєстрований НЕ через гугл. Ввійдіть з імейлом та паролем" });
+      }
+    }
+    //якщо користувача не знайдено то реєструємо його
+    else{
+      user = new userdb({
+        displayName: name,
+        email: email,
+        image: picture,
+        isGoogleAuth: true,
+      });
+      await user.save().then(u=>{
+        user = u
+      }).catch(err=>{
+        return res.status(500).json({message: err.message});
+      });
+    }
+    return res.status(200).json(user);
+  }).catch(err=>{
+    console.log(err)
+    return res.status(500).json({message: 'Не вдалось увійти через гугл'});
+  });
+})
 
 app.get("/logout", (req, res, next) => {
   req.logout(function (err) {
@@ -275,15 +328,13 @@ app.get("/profile/info", async (req, res) => {
   const defLanguage = user?.language?.langValue;
   const defCardNumber = user?.cardNumber;
 
-  res
-    .status(200)
-    .json({
-      curency: curency,
-      language: language,
-      defCurency,
-      defLanguage,
-      defCardNumber,
-    });
+  res.status(200).json({
+    curency: curency,
+    language: language,
+    defCurency,
+    defLanguage,
+    defCardNumber,
+  });
 });
 
 //зберегти налаштування валюти валюти та номеру картки
@@ -360,12 +411,11 @@ app.get("/group", async (req, res) => {
 app.get("/groupAll", async (req, res) => {
   const userId = req.query.userId;
 
-  const groups = await groupdb.find({ members: userId })
-  .populate("expenses members")
+  const groups = await groupdb
+    .find({ members: userId })
+    .populate("expenses members");
 
   res.status(200).json(groups);
-
-  
 });
 
 //редагування групи: імя та картинка
@@ -409,7 +459,6 @@ app.post("/group/members", async (req, res) => {
   if (group.members.includes(userId)) {
     res.status(200).json({ message: "Учасник вже доданий", warning: true });
   } else {
-
     const updatedGroup = await groupdb.findOneAndUpdate(
       { _id: groupId },
       { $push: { members: userId } },
@@ -441,16 +490,14 @@ app.delete("/group/members", async (req, res) => {
 //отримати посилання на картинку від aws
 app.post("/aws/getIngameUrl", async (req, res) => {
   const file = req.files.file;
-  
 
-  if(file.mimetype.includes('heic') || file.mimetype.includes('heif')){
+  if (file.mimetype.includes("heic") || file.mimetype.includes("heif")) {
     const changedBuffer = await convert({
       buffer: file.data, // the HEIC file buffer
-      format: 'JPEG',      // output format
-      quality: 1           // the jpeg compression quality, between 0 and 1
-    })
-    file.data = changedBuffer
-
+      format: "JPEG", // output format
+      quality: 1, // the jpeg compression quality, between 0 and 1
+    });
+    file.data = changedBuffer;
   }
 
   if (file) {
@@ -499,20 +546,19 @@ app.post("/expenses", async (req, res) => {
   const response = await newExpense.save();
 
   if (response._id) {
-   
     const updatedGroup = await groupdb.findOneAndUpdate(
       { _id: response.group },
       { $push: { expenses: response._id } },
       { new: true }
     );
-    
+
     res.status(200).json({ message: "Витрата створена" });
   } else {
     res.status(404).json({ message: "Учасник не видалений" });
   }
 });
 //редагування витрати
-app.put('/expenses', async (req, res) => {
+app.put("/expenses", async (req, res) => {
   const expenseId = req.body.expenseId;
   const expense = req.body.expense;
 
@@ -527,7 +573,7 @@ app.put('/expenses', async (req, res) => {
   } else {
     res.status(404).json({ message: "Витрата не відредагована" });
   }
-})
+});
 //отримати 1 витрату по ід
 app.get("/expenses", async (req, res) => {
   const expenseId = req.query.expenseId;
@@ -536,12 +582,12 @@ app.get("/expenses", async (req, res) => {
     .findOne({ _id: expenseId })
     .populate("owe.user land.user")
     .populate({
-      path: 'group',
+      path: "group",
       populate: {
-          path: 'members',
-          model: 'users' // Assuming 'curency' is the model name for currencySchema
-}})
-
+        path: "members",
+        model: "users", // Assuming 'curency' is the model name for currencySchema
+      },
+    });
 
   res.status(200).json(response);
 });
@@ -564,15 +610,16 @@ app.get("/expensesAll", async (req, res) => {
 
   const response = await expensedb
     .find({ group: groupId })
-    .populate({path: "group"})
-    .populate({path: "owe.user"})
+    .populate({ path: "group" })
+    .populate({ path: "owe.user" })
     .populate({
-      path: 'land.user',
+      path: "land.user",
       populate: {
-          path: 'curency',
-          model: 'curency' // Assuming 'curency' is the model name for currencySchema
-      }
-  }).sort({"createdAt": -1})
+        path: "curency",
+        model: "curency", // Assuming 'curency' is the model name for currencySchema
+      },
+    })
+    .sort({ createdAt: -1 });
 
   res.status(200).json(response);
 });
@@ -582,12 +629,12 @@ app.get("/expensesSum", async (req, res) => {
     {
       $group: {
         _id: null,
-        totalPrice: { $sum: '$price' }
-      }
-    }
-  ])
+        totalPrice: { $sum: "$price" },
+      },
+    },
+  ]);
   res.status(200).json(response[0].totalPrice);
-})
+});
 //робота з витратами кінець
 
 //test

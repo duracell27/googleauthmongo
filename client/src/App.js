@@ -18,30 +18,23 @@ export const AuthContext = createContext();
 
 function App() {
   const [userdata, setUserdata] = useState({});
+ 
 
-  // отримуємо інформацію про залогіненого користувача
-  const getUser = async () => {
-    try {
-      const response = await axios.get(
-        process.env.REACT_APP_BACK_URL + "/login/success",
-        {
-          withCredentials: true,
-        }
-      );
-      console.log('user', response.data)
-      setUserdata(response.data.user);
-    } catch (error) {
-      console.log("errorHeaders");
+  const checkUser = () => {
+    if (sessionStorage.getItem("user")) {
+      setUserdata(JSON.parse(sessionStorage.getItem("user")));
     }
-  };
+  }
   //отримуємо початкову інформацію чи юзер залогінений
   useEffect(() => {
-    getUser();
+    checkUser()
   }, []);
+
+  console.log('userData', userdata)
 
   return (
     <>
-      <AuthContext.Provider value={{ userdata, setUserdata, getUser }}>
+      <AuthContext.Provider value={{ userdata, setUserdata }}>
         <Toaster />
         <Headers />
         {userdata._id ? (

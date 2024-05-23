@@ -1,13 +1,17 @@
 import React, { useContext } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../App";
 
 const Headers = () => {
   
-  const {userdata} = useContext(AuthContext)
+  const {userdata, setUserdata} = useContext(AuthContext)
+
+  const navigate = useNavigate()
 
   const logout = () => {
-    window.open(process.env.REACT_APP_BACK_URL + "/logout", "_self");
+    sessionStorage.removeItem("user");
+    setUserdata({});
+    navigate('/')
   };
   
 
