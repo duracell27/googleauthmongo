@@ -4,10 +4,7 @@ const app = express();
 const cors = require("cors");
 require("./db/connection");
 const PORT = 5050;
-//for google auth
 const session = require("express-session");
-const passport = require("passport");
-const OAuth2Strategy = require("passport-google-oauth20").Strategy;
 const userdb = require("./models/User");
 const friendRequestdb = require("./models/FriendRequest");
 const curencydb = require("./models/Curency");
@@ -20,22 +17,22 @@ const uniqid = require("uniqid");
 const fileUpload = require("express-fileupload");
 const convert = require("heic-convert");
 const admin = require("firebase-admin");
-// const serviceAccountKey = require("./lendower4-firebase-adminsdk-plz3l-44197a7faf.json")
-const {getAuth} =require("firebase-admin/auth");
+const { getAuth } = require("firebase-admin/auth");
+const sharp = require("sharp");
 
 admin.initializeApp({
   credential: admin.credential.cert({
-    "type": process.env.GOOGLE_ADMIN_TYPE,
-    "project_id": process.env.GOOGLE_ADMIN_PROJECT_ID,
-    "private_key_id": process.env.GOOGLE_ADMIN_PRIVATE_KEY_ID,
-    "private_key": process.env.GOOGLE_ADMIN_PRIVATE_KEY,
-    "client_email": process.env.GOOGLE_ADMIN_CLIENT_EMAIL,
-    "client_id": process.env.GOOGLE_ADMIN_CLIENT_ID,
-    "auth_uri": process.env.GOOGLE_ADMIN_AUTH_URI,
-    "token_uri": process.env.GOOGLE_ADMIN_TOKEN_URI,
-    "auth_provider_x509_cert_url": process.env.GOOGLE_ADMIN_AUTH_PROVIDER,
-    "client_x509_cert_url": process.env.GOOGLE_ADMIN_AUTH_CLIENT_CERT,
-    "universe_domain": process.env.GOOGLE_ADMIN_DOMAIN
+    type: process.env.GOOGLE_ADMIN_TYPE,
+    project_id: process.env.GOOGLE_ADMIN_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_ADMIN_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_ADMIN_PRIVATE_KEY,
+    client_email: process.env.GOOGLE_ADMIN_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_ADMIN_CLIENT_ID,
+    auth_uri: process.env.GOOGLE_ADMIN_AUTH_URI,
+    token_uri: process.env.GOOGLE_ADMIN_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.GOOGLE_ADMIN_AUTH_PROVIDER,
+    client_x509_cert_url: process.env.GOOGLE_ADMIN_AUTH_CLIENT_CERT,
+    universe_domain: process.env.GOOGLE_ADMIN_DOMAIN,
   }),
 });
 
@@ -57,135 +54,73 @@ app.use(
     cookie: { maxAge: 86400000, secure: false },
   })
 );
-
+// для роботи з файлами, щоб можна було грузити на авс
 app.use(fileUpload());
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.use(
-  new OAuth2Strategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-      callbackURL: "/auth/google/callback",
-      scope: ["profile", "email"],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await userdb
-          .findOne({ googleId: profile.id })
-          .populate("curency");
-        if (!user) {
-          user = new userdb({
-            googleId: profile.id,
-            displayName: profile.displayName,
-            email: profile.emails[0].value,
-            image: profile.photos[0].value,
-          });
-          await user.save();
-        }
-
-        return done(null, user);
-      } catch (error) {
-        return done(error, null);
-      }
-    }
-  )
-);
-
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
 
 app.get("/", (req, res) => {
   res.status(200).send({ message: "server is running" });
 });
+// тестовий ендпоінт
 app.get("/test", (req, res) => {
   res.status(200).send({ message: "test route" });
 });
 
-//initial google outh
-app.get(
-  "/auth/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  })
-);
-
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: process.env.CLIENT_URL + "/profile",
-    failureRedirect: process.env.CLIENT_URL + "/login",
-  })
-);
-// робота з логіном, вхід і логаут і робота з юзерами початок
-app.get("/login/success", async (req, res) => {
-  console.log("req user", req.user);
-
-  //пофіксив щоб брались нові настройки при зберіганні валюти
-  let user = await userdb
-    .findOne({ _id: req?.user?._id })
-    .populate("curency language");
-
-  if (req.user) {
-    res.status(200).send({ message: "user Login", user: user });
-  } else {
-    res.status(404).send({ message: "user not authenticated" });
-  }
-});
-
+// логін через гугл, та реєстрація коростувача в бд
 app.post("/google-auth", async (req, res) => {
-  let {access_token} = req.body
+  let { access_token } = req.body;
 
-  getAuth().verifyIdToken(access_token).then(async(decodedUser) => {
-    let {email, name, picture} = decodedUser
-    //якщо треаба більшу картинку то розкоментувати рядок нижче
-    // picture = picture.replace('s96-c', 's384-c');
+  getAuth()
+    .verifyIdToken(access_token)
+    .then(async (decodedUser) => {
+      let { email, name, picture } = decodedUser;
+      //якщо треаба більшу картинку то розкоментувати рядок нижче
+      // picture = picture.replace('s96-c', 's384-c');
 
-    let user = await userdb.findOne({email:email}).populate("curency language").then(u=>{return u || null}).catch(err =>{
-      return res.status(500).json({message: err.message});
-    } );
+      let user = await userdb
+        .findOne({ email: email })
+        .populate("curency language")
+        .then((u) => {
+          return u || null;
+        })
+        .catch((err) => {
+          return res.status(500).json({ message: err.message });
+        });
 
-    if (user) {
-      if(!user.isGoogleAuth){
-       return res.status(403).send({ message: "Цей акаунт зареєстрований НЕ через гугл. Ввійдіть з імейлом та паролем" });
+      if (user) {
+        if (!user.isGoogleAuth) {
+          return res
+            .status(403)
+            .send({
+              message:
+                "Цей акаунт зареєстрований НЕ через гугл. Ввійдіть з імейлом та паролем",
+            });
+        }
       }
-    }
-    //якщо користувача не знайдено то реєструємо його
-    else{
-      user = new userdb({
-        displayName: name,
-        email: email,
-        image: picture,
-        isGoogleAuth: true,
-      });
-      await user.save().then(u=>{
-        user = u
-      }).catch(err=>{
-        return res.status(500).json({message: err.message});
-      });
-    }
-    return res.status(200).json(user);
-  }).catch(err=>{
-    console.log(err)
-    return res.status(500).json({message: 'Не вдалось увійти через гугл'});
-  });
-})
-
-app.get("/logout", (req, res, next) => {
-  req.logout(function (err) {
-    if (err) {
-      return next(err);
-    }
-  });
-  res.redirect(process.env.CLIENT_URL);
+      //якщо користувача не знайдено то реєструємо його
+      else {
+        user = new userdb({
+          displayName: name,
+          email: email,
+          image: picture,
+          isGoogleAuth: true,
+        });
+        await user
+          .save()
+          .then((u) => {
+            user = u;
+          })
+          .catch((err) => {
+            return res.status(500).json({ message: err.message });
+          });
+      }
+      return res.status(200).json(user);
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ message: "Не вдалось увійти через гугл" });
+    });
 });
+
 //пошук користувачів по імені
 app.post("/searchuser", async (req, res) => {
   const searchquery = req.body.searchquery;
@@ -194,6 +129,16 @@ app.post("/searchuser", async (req, res) => {
     .find({ displayName: { $regex: searchquery, $options: "i" } })
     .limit(10);
   res.status(200).send(users);
+});
+
+app.get("/getUser", async (req, res) => {
+  const userId = req.query.userId;
+  const user = await userdb.findById(userId).populate("curency language");
+  if (user._id) {
+    return res.status(200).json(user);
+  } else {
+    return res.status(500).json({ message: "Не вдалось оновити дані юзера" });
+  }
 });
 // робота з логіном, вхід і логаут і робота з юзерами кінець
 
@@ -498,41 +443,126 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       quality: 1, // the jpeg compression quality, between 0 and 1
     });
     file.data = changedBuffer;
-  }
-
-  if (file) {
-    const s3Client = new S3Client({
-      region: "eu-north-1",
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_KEY,
-      },
-    });
-
-    const randomId = uniqid();
-    const ext = file.name.split(".").pop();
-    const newFileName = randomId + "." + ext;
-
-    // const chunks = [];
-    // for await (const chunk of file.stream()) {
-    //   chunks.push(chunk);
-    // }
-
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: newFileName,
-        Body: file.data,
-        ACL: "public-read",
-        ContentType: file.mimetype,
+    console.log("from heic");
+    console.log("from heic buffer", file.data);
+    //еееексперіменти
+    sharp(file.data)
+      .resize(200, 200, {
+        fit: sharp.fit.inside,
       })
-    );
+      .toFormat("jpeg")
+      .toBuffer()
+      .then(async function (outputBuffer) {
+        file.data = outputBuffer;
 
-    const link =
-      "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
+        if (file) {
+          const s3Client = new S3Client({
+            region: "eu-north-1",
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY,
+              secretAccessKey: process.env.AWS_SECRET_KEY,
+            },
+          });
 
-    res.status(200).json(link);
+          const randomId = uniqid();
+          const ext = file.name.split(".").pop();
+          const newFileName = randomId + "." + ext;
+
+          await s3Client.send(
+            new PutObjectCommand({
+              Bucket: process.env.BUCKET_NAME,
+              Key: newFileName,
+              Body: file.data,
+              ACL: "public-read",
+              ContentType: file.mimetype,
+            })
+          );
+
+          const link =
+            "https://" +
+            process.env.BUCKET_NAME +
+            ".s3.amazonaws.com/" +
+            newFileName;
+
+          res.status(200).json(link);
+        }
+      });
+    //еееексперіменти
+  } else {
+    //еееексперіменти
+    sharp(file.data)
+      .resize(200, 200, {
+        fit: sharp.fit.inside,
+      })
+      .toFormat("jpeg")
+      .toBuffer()
+      .then(async function (outputBuffer) {
+        file.data = outputBuffer;
+
+        if (file) {
+          const s3Client = new S3Client({
+            region: "eu-north-1",
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY,
+              secretAccessKey: process.env.AWS_SECRET_KEY,
+            },
+          });
+
+          const randomId = uniqid();
+          const ext = file.name.split(".").pop();
+          const newFileName = randomId + "." + ext;
+
+          await s3Client.send(
+            new PutObjectCommand({
+              Bucket: process.env.BUCKET_NAME,
+              Key: newFileName,
+              Body: file.data,
+              ACL: "public-read",
+              ContentType: file.mimetype,
+            })
+          );
+
+          const link =
+            "https://" +
+            process.env.BUCKET_NAME +
+            ".s3.amazonaws.com/" +
+            newFileName;
+
+          res.status(200).json(link);
+        }
+      });
   }
+
+  //еееексперіменти
+
+  // if (file) {
+  //   const s3Client = new S3Client({
+  //     region: "eu-north-1",
+  //     credentials: {
+  //       accessKeyId: process.env.AWS_ACCESS_KEY,
+  //       secretAccessKey: process.env.AWS_SECRET_KEY,
+  //     },
+  //   });
+
+  //   const randomId = uniqid();
+  //   const ext = file.name.split(".").pop();
+  //   const newFileName = randomId + "." + ext;
+
+  //   await s3Client.send(
+  //     new PutObjectCommand({
+  //       Bucket: process.env.BUCKET_NAME,
+  //       Key: newFileName,
+  //       Body: file.data,
+  //       ACL: "public-read",
+  //       ContentType: file.mimetype,
+  //     })
+  //   );
+
+  //   const link =
+  //     "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
+
+  //   res.status(200).json(link);
+  // }
 });
 
 //робота з групами кінець

@@ -10,7 +10,7 @@ import AddExpense from "./Componets/AddExpense";
 import Account from "./Componets/Account";
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import GroupPage from "./Componets/GroupPage";
 import ShowExpense from "./Componets/ShowExpense";
 
@@ -25,6 +25,28 @@ function App() {
       setUserdata(JSON.parse(sessionStorage.getItem("user")));
     }
   }
+
+  const getUserData = async () => {
+    if(userdata._id){
+      try {
+        const response = await axios.get(
+          process.env.REACT_APP_BACK_URL + "/getUser",
+          {
+            withCredentials: true,
+            params: {
+              userId: userdata._id,
+            },
+          }
+        );
+        if (response.status === 200) {
+          setUserdata(response.data);
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.message);
+      }
+    }
+  }
+
   //отримуємо початкову інформацію чи юзер залогінений
   useEffect(() => {
     checkUser()
@@ -34,7 +56,7 @@ function App() {
 
   return (
     <>
-      <AuthContext.Provider value={{ userdata, setUserdata }}>
+      <AuthContext.Provider value={{ userdata, setUserdata,getUserData }}>
         <Toaster />
         <Headers />
         {userdata._id ? (

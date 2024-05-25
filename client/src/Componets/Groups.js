@@ -180,7 +180,7 @@ const Groups = () => {
               to={`/profile/groups/${group._id}`}
               className="block blockEl bg-slate-800"
             >
-              <div className="font-xl font-bold px-2 flex gap-3 items-center">
+              <div className="font-xl font-bold px-2 flex flex-col md:flex-row gap-3 items-center">
                 {moment(group.createdAt).locale("uk").format("DD MMM YYYY")}
                 {group.image.length > 0 ? (
                   <img

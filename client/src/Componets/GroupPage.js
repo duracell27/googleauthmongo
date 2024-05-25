@@ -194,7 +194,7 @@ const GroupPage = () => {
     });
 
     // Calculate the net amount
-    return landSum - oweSum;
+    return (landSum - oweSum).toFixed(2);
   }
 
   // розраховує загальні витрати групи
@@ -204,7 +204,7 @@ const GroupPage = () => {
       groupTotal += expense.price;
     });
 
-    return groupTotal;
+    return groupTotal.toFixed(2);
   };
   // розраховує загальні витрати користувача
   const calculateUserTotal = () => {
@@ -217,7 +217,7 @@ const GroupPage = () => {
       });
     });
 
-    return totalOwedSum;
+    return totalOwedSum.toFixed(2);
   };
   // розраховує загальний баланс користувача в групі чи він винен чи ні
   const calculateNetTotalUser = () => {
@@ -235,7 +235,7 @@ const GroupPage = () => {
       });
     });
 
-    return netTotalUser;
+    return netTotalUser.toFixed(2);
   };
 
   // при зміні поля пошуку, шукаємо користувачів
@@ -253,7 +253,7 @@ const GroupPage = () => {
   return (
     <div className="bg-green-600 h-screen">
       {/* cсекція з назвою лого і датою */}
-      <div className="text-4xl font-bold mb-3 flex items-center gap-5">
+      <div className="text-xl md:text-4xl font-bold mb-3 flex items-center gap-5">
         {groupInfo?.image.length > 0 ? (
           <img
             src={groupInfo?.image}
@@ -267,7 +267,7 @@ const GroupPage = () => {
           />
         )}
         <span className="grow">
-          {groupInfo?.name}
+          <span className="">{groupInfo?.name}</span>
           <p className="text-xl text-white/60">
             {moment(groupInfo?.createdAt).locale("uk").format("DD MMM YYYY")}
           </p>
@@ -275,7 +275,7 @@ const GroupPage = () => {
         {groupInfo?.members[0]?._id === userdata?._id ? (
           <div
             onClick={deleteGroupHandler}
-            className="blockEl bg-green-800 text-xl cursor-pointer"
+            className="blockEl bg-green-800 text-sm md:text-xl cursor-pointer"
           >
             Видалити групу
           </div>
@@ -285,11 +285,11 @@ const GroupPage = () => {
       </div>
 
       {/* основна секція з витратами та учасниками */}
-      <div className="flex gap-5">
+      <div className="flex flex-col md:flex-row gap-5">
         {/* секція з витратами */}
         <div className="blockEl bg-green-700 grow">
           <span className="font-xl font-bold mb-3 block">Витрати</span>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col md:flex-row gap-2 justify-between items-center">
             <button
               className="bg-slate-800 rounded-full p-2 px-4"
               onClick={() => setAddExpensePopup((prev) => !prev)}
@@ -300,7 +300,7 @@ const GroupPage = () => {
               />
               <span>Додати витрату</span>
             </button>
-            <div className=" flex gap-2">
+            <div className=" flex flex-col md:flex-row gap-2">
               <span className="bloclEl bg-slate-800 p-1 rounded-lg">
                 Загальні витрати групи: {calculateGroupTotal()}{" "}
                 {userdata.curency.curencyValue}
@@ -329,6 +329,8 @@ const GroupPage = () => {
               members={groupInfo.members}
               setAddExpensePopup={setAddExpensePopup}
               getExpenses={getExpenses}
+              isCreate={true}
+              
             />
           )}
           {/* вивід всіх витрати в групі */}
@@ -336,7 +338,7 @@ const GroupPage = () => {
             <Link to={`/profile/expense/${expense._id}`}>
               <div
                 key={index}
-                className="blockEl bg-slate-800 flex items-center gap-3"
+                className="blockEl bg-slate-800 flex flex-col md:flex-row items-center gap-3"
               >
                 <span>
                   {moment(expense?.createdAt)
@@ -367,7 +369,8 @@ const GroupPage = () => {
                       />
                       <span>{expense?.land[0]?.user?.displayName}</span>{" "}
                       {"оплат."} {expense?.land[0]?.sum}{" "}
-                      {expense?.land[0]?.user?.curency?.curencyValue}
+                      {userdata.curency.curencyValue}
+                      {/* {expense?.land[0]?.user?.curency?.curencyValue} */}
                     </span>
                   ) : (
                     //вивід аватарок хто платив

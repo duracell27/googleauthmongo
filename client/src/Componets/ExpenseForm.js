@@ -12,6 +12,7 @@ const ExpenseForm = ({
   getExpenses,
   existingExpense,
   isEdit,
+  isCreate,
 }) => {
   const { userdata } = useContext(AuthContext);
 
@@ -39,7 +40,7 @@ const ExpenseForm = ({
   }, [existingExpense]);
   // реагує на змінну редагування, міняє інтерфес,і додає кнопки зберегти і так далі..
   useEffect(() => {
-    if (isEdit) {
+    if (isEdit || isCreate) {
       setExpenseStep(1);
     } else {
       setExpenseStep(4);
@@ -174,7 +175,7 @@ const ExpenseForm = ({
   // обраховує частку витрати між вибраними користувачами
   const calculateEquilyOweSums = () => {
     if (expense.owe.length > 0) {
-      return +expense.price / expense.owe.length;
+      return (+expense.price / expense.owe.length).toFixed(2);
     }
     return "виберіть когось щоб визначити частку";
   };
@@ -287,7 +288,7 @@ const ExpenseForm = ({
                   type="file"
                   onChange={expenseAvatarChange}
                   className="hidden"
-                  disabled={!isEdit}
+                  disabled={!(isEdit || isCreate)}
                 />
               </label>
             </div>
@@ -303,7 +304,7 @@ const ExpenseForm = ({
                   onChange={(e) =>
                     setExpense({ ...expense, name: e.target.value })
                   }
-                  disabled={!isEdit}
+                  disabled={!(isEdit || isCreate)}
                 />
               </label>
 
@@ -318,7 +319,7 @@ const ExpenseForm = ({
                   onChange={(e) =>
                     setExpense({ ...expense, price: e.target.value })
                   }
-                  disabled={!isEdit}
+                  disabled={!(isEdit || isCreate)}
                 />
               </label>
             </div>
@@ -400,7 +401,7 @@ const ExpenseForm = ({
                       )}
                       type="checkbox"
                       name="land"
-                      disabled={!isEdit}
+                      disabled={!(isEdit || isCreate)}
                       className="hidden peer "
                       id={`landmulti${member._id}`}
                     />
@@ -415,7 +416,7 @@ const ExpenseForm = ({
                           (obj) => obj.user._id === member._id
                         )[0]?.sum
                       }
-                      disabled={!isEdit}
+                      disabled={!(isEdit || isCreate)}
                       onChange={(e) => addSumToLand(e.target.value, member._id)}
                       placeholder="Сума"
                       className="bg-slate-800 indent-1 rounded-lg w-14 mr-2 outline-none disabled:bg-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -431,7 +432,7 @@ const ExpenseForm = ({
                         handleCheckbox(e.target.checked, member, "land")
                       }
                       type="radio"
-                      disabled={!isEdit}
+                      disabled={!(isEdit || isCreate)}
                       checked={expense.land.some(
                         (obj) => obj?.user?._id === member._id
                       )}
@@ -564,7 +565,7 @@ const ExpenseForm = ({
                       )}
                       type="checkbox"
                       name="owe"
-                      disabled={!isEdit}
+                      disabled={!(isEdit || isCreate)}
                     />
                     <label htmlFor={`oweex${member._id}`} className="bg-transparent block w-5 h-5 rounded-lg border mr-2 border-white peer-checked:bg-slate-800" ></label>
                     <span className="hidden pointer-events-none -top-[2px] left-[3px] absolute peer-checked:block rounded-full"><FontAwesomeIcon className="z-10 w-4 h-4" icon={faCheck}/></span>
@@ -577,7 +578,7 @@ const ExpenseForm = ({
                           (obj) => obj.user._id === member._id
                         )[0]?.sum
                       }
-                      disabled={!isEdit}
+                      disabled={!(isEdit || isCreate)}
                       onChange={(e) => addSumToOwe(e.target.value, member._id)}
                       placeholder="Сума"
                       className="bg-slate-800 indent-1 rounded-lg w-14 mr-2 outline-none disabled:bg-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -590,7 +591,7 @@ const ExpenseForm = ({
                     onChange={(e) =>
                       handleCheckbox(e.target.checked, member, "owe")
                     }
-                    disabled={!isEdit}
+                    disabled={!(isEdit || isCreate)}
                     type="checkbox"
                     checked={expense.owe.some(
                       (obj) => obj.user._id === member._id
@@ -636,7 +637,8 @@ const ExpenseForm = ({
           className="bg-slate-800 rounded-full p-2 px-4 cursor-pointer disabled:bg-slate-500"
           onClick={handleSaveExpense}
         >
-          {isEdit ? "Відредагувати" : "Зберегти"}
+          {isCreate?'Зберегти': isEdit? 'Відредагувати': 'Зберегти'}
+          {/* {isEdit ? "Відредагувати" : "Зберегти"} */}
         </button>
       )}
     </div>

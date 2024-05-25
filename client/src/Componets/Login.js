@@ -7,27 +7,28 @@ import { AuthContext } from "../App";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 const Login = () => {
+  const { userdata, setUserdata } = useContext(AuthContext);
 
-  const {userdata, setUserdata} = useContext(AuthContext)
-
-  const navigane = useNavigate()
+  const navigane = useNavigate();
 
   //логін через гугл, заповняємо дані користувача
   const handleGoogleAuth = (e) => {
     e.preventDefault();
     // функція від фаєрбейс
     authWithGoogle()
-      .then(async(user) => {
+      .then(async (user) => {
         try {
           const response = await axios.post(
             process.env.REACT_APP_BACK_URL + "/google-auth",
-            {access_token: user.accessToken}
+            { access_token: user.accessToken }
           );
-          sessionStorage.setItem('user', JSON.stringify(response.data))
-          setUserdata(response.data);
-          navigane('/profile/friends')
+          if (response.status === 200) {
+            sessionStorage.setItem("user", JSON.stringify(response.data));
+            setUserdata(response.data);
+            navigane("/profile/friends");
+          }
         } catch (error) {
-          toast.error(error.response.data.message)
+          toast.error(error.response.data.message);
         }
       })
       .catch((err) => {

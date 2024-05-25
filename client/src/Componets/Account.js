@@ -11,7 +11,7 @@ import { AuthContext } from "../App";
 import toast from "react-hot-toast";
 
 const Account = () => {
-  const { userdata} = useContext(AuthContext);
+  const { userdata, getUserData} = useContext(AuthContext);
 
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -165,7 +165,7 @@ const Account = () => {
       );
       if (response.status === 200) {
         toast.success(response.data.message);
-        // getUser()
+        getUserData()
       }
     } catch (error) {
       toast.error(error?.response?.data);
@@ -226,7 +226,7 @@ const Account = () => {
       <h1 className="text-4xl font-bold">Акаунт</h1>
       <div className="blockEl bg-green-700 ">
         {/* секція друзі початок */}
-        <div className="grid grid-cols-3 gap-5 items-stretch">
+        <div className="grid md:grid-cols-3 gap-2 md:gap-5 items-stretch">
           <div className="blockEl bg-slate-800">
             <span className="font-xl font-bold mb-3 block">Друзі</span>
             {friends.map((friend, index) => (
