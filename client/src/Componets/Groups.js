@@ -216,7 +216,7 @@ const Groups = () => {
                       : "text-red-500"
                   }`}
                 >
-                  {calculateNetTotalUser(group.expenses)}{" "}
+                  {calculateNetTotalUser(group.expenses).toFixed(2)}{" "}
                   {userdata.curency.curencyValue}
                 </span>
               </div>

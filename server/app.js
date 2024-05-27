@@ -19,6 +19,7 @@ const convert = require("heic-convert");
 const admin = require("firebase-admin");
 const { getAuth } = require("firebase-admin/auth");
 const sharp = require("sharp");
+const settledb = require("./models/Settele");
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -88,12 +89,10 @@ app.post("/google-auth", async (req, res) => {
 
       if (user) {
         if (!user.isGoogleAuth) {
-          return res
-            .status(403)
-            .send({
-              message:
-                "Цей акаунт зареєстрований НЕ через гугл. Ввійдіть з імейлом та паролем",
-            });
+          return res.status(403).send({
+            message:
+              "Цей акаунт зареєстрований НЕ через гугл. Ввійдіть з імейлом та паролем",
+          });
         }
       }
       //якщо користувача не знайдено то реєструємо його
@@ -667,7 +666,129 @@ app.get("/expensesSum", async (req, res) => {
 });
 //робота з витратами кінець
 
-//test
+//робота з розрахунками початок
+
+app.get("/calculateSettle", async function (req, res) {
+  const groupId = req.query.groupId;
+
+  await settledb.deleteMany({$and:[ {groupId: groupId}, {settled: {$eq: 0}}]})
+
+  const group = await groupdb
+    .findById(groupId)
+    .populate("members")
+    .select("members -_id");
+  const members = group.members;
+  const expenses = await expensedb
+    .find({ group: groupId })
+    .populate("land.user owe.user");
+
+  if (members.length > 0 && expenses.length > 0) {
+    // Initialize sums object for each member
+    let sums = members.reduce((acc, member) => {
+      acc[member._id] = 0;
+      return acc;
+    }, {});
+
+    // Iterate over the expenses array to update the sums
+    expenses.forEach((expense) => {
+      expense.land.forEach((land) => {
+        sums[land.user._id] += land.sum;
+      });
+      expense.owe.forEach((owe) => {
+        sums[owe.user._id] -= owe.sum;
+      });
+    });
+
+    // Prepare the result
+    const result = members.map((member) => {
+      return {
+        _id: member._id,
+        image: member.image,
+        displayName: member.displayName,
+        sum: sums[member._id].toFixed(2),
+      };
+    });
+
+    if (result.length > 0) {
+      const positives = result
+        .filter((member) => parseFloat(member.sum) > 0)
+        .sort((a, b) => parseFloat(b.sum) - parseFloat(a.sum));
+      const negatives = result
+        .filter((member) => parseFloat(member.sum) < 0)
+        .sort((a, b) => parseFloat(a.sum) - parseFloat(b.sum));
+
+      const transactions = [];
+
+      while (positives.length > 0 && negatives.length > 0) {
+        const positive = positives[0];
+        const negative = negatives[0];
+
+        const positiveSum = parseFloat(positive.sum);
+        const negativeSum = parseFloat(negative.sum);
+
+        const amount = Math.min(positiveSum, -negativeSum);
+
+        transactions.push(
+          {
+            groupId: groupId,
+            ower: negative,
+            lender: positive,
+            amount: amount.toFixed(2),
+            settled: 0
+          }
+        );
+
+        positive.sum = (positiveSum - amount).toFixed(2);
+        negative.sum = (negativeSum + amount).toFixed(2);
+
+        if (parseFloat(positive.sum) === 0) {
+          positives.shift();
+        }
+        if (parseFloat(negative.sum) === 0) {
+          negatives.shift();
+        }
+      }
+      await settledb.create(transactions)
+
+      const transactionArray = await settledb.find({groupId: groupId}).populate('ower lender')
+
+      res.status(200).send(transactionArray)
+  
+    }
+  }
+
+  
+});
+
+app.post('/settle', async (req, res) => {
+  const settleData = req.body;
+
+  const newSettle = await settledb.create(settleData);
+  const response = await newSettle.save();
+
+  if (response._id) {
+    res.status(200).json({ message: "Розрахунок створено" });
+  } else {
+    res.status(404).json({ message: "Розрахунок не створено" });
+  }
+})
+
+app.delete('/settle', async (req, res) => {
+  const settleId = req.query.settleId;
+
+
+  const response = await settledb.deleteOne({ _id: settleId });
+
+  if (response.deletedCount == 1) {
+    res.status(200).json({ message: "Розрахунок видалено" });
+  } else {
+    res.status(404).json({ message: "Розрахунок не видалено" });
+  }
+})
+
+//робота з розрахунками кінець
+
+//запуск сервера
 app.listen(PORT, () => {
   console.log(`server start on port ${PORT}`);
 });

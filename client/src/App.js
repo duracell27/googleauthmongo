@@ -52,11 +52,9 @@ function App() {
     checkUser()
   }, []);
 
-  console.log('userData', userdata)
-
   return (
     <>
-      <AuthContext.Provider value={{ userdata, setUserdata,getUserData }}>
+      <AuthContext.Provider value={{ userdata, setUserdata, getUserData }}>
         <Toaster />
         <Headers />
         {userdata._id ? (

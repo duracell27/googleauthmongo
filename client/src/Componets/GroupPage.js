@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import { Link, useParams } from "react-router-dom";
 import { AuthContext } from "../App";
 import ExpenseForm from "./ExpenseForm";
+import Transactions from "./Transactions";
 
 const GroupPage = () => {
   //groupId
@@ -22,13 +23,16 @@ const GroupPage = () => {
   const [friends, setFriends] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [groupInfo, setGroupInfo] = useState(null);
+  const [settles, setSettles] = useState([]);
+  const [settlesByUser, setSettlesByUser] = useState([]);
+  const [settlesPayed, setSettlesPayed] = useState([]);
 
   const [memberSearch, setMemberSearch] = useState("");
   const [findedUsers, setFindedUsers] = useState([]);
 
   const [addMembersPopup, setAddMembersPopup] = useState(false);
   const [addExpensePopup, setAddExpensePopup] = useState(false);
-  
+
   //   отримуємо список друзів щоб можна було легко додати до групи
   const getFriends = async () => {
     try {
@@ -127,7 +131,6 @@ const GroupPage = () => {
         }
       }
     } catch (error) {
-      
       toast.error(error?.response?.data);
     }
   };
@@ -149,7 +152,6 @@ const GroupPage = () => {
         }
       } catch (error) {
         toast.error(error?.response?.data);
-        
       }
     }
   };
@@ -238,6 +240,59 @@ const GroupPage = () => {
     return netTotalUser.toFixed(2);
   };
 
+  const getSettles = async () => {
+    try {
+      const response = await axios.get(
+        process.env.REACT_APP_BACK_URL + "/calculateSettle",
+        {
+          withCredentials: true,
+          params: {
+            groupId: id,
+          },
+        }
+      );
+      if (response.status === 200) {
+      
+        let settles =response.data.filter(settle=>settle.amount>0)
+        let settlesPayed = response.data.filter(settle=>settle.settled>0)
+
+
+        settles.forEach(unfiltered => {
+          settlesPayed.forEach(payed => {
+              if (unfiltered.ower._id === payed.ower._id && unfiltered.lender._id === payed.lender._id) {
+                  unfiltered.amount -= payed.settled;
+              }
+          });
+      });
+
+
+        console.log('settles', settlesByUser)
+
+        let sortedSettles = settles.sort((a, b) => {
+          // Сортування за lender.displayName
+          let nameA = a.lender.displayName.toLowerCase();
+          let nameB = b.lender.displayName.toLowerCase();
+          if (nameA < nameB) return -1;
+          if (nameA > nameB) return 1;
+      
+          // Якщо lender.displayName однакові, сортуємо за amount
+          return a.amount - b.amount;
+      })
+
+        const settlesbyId = sortedSettles.filter(item => 
+          item.lender._id === userdata._id || item.ower._id === userdata._id
+      );
+      
+
+        setSettles(sortedSettles);
+        setSettlesByUser(settlesbyId)
+        setSettlesPayed(settlesPayed)
+      }
+    } catch (error) {
+      toast.error(error?.response?.data);
+    }
+  };
+
   // при зміні поля пошуку, шукаємо користувачів
   useEffect(() => {
     searchUsers();
@@ -248,7 +303,11 @@ const GroupPage = () => {
     getGroupInfo();
     getFriends();
     getExpenses();
+    getSettles();
   }, []);
+
+  console.log(settles)
+  console.log(settlesPayed)
 
   return (
     <div className="bg-green-600 h-screen">
@@ -282,6 +341,15 @@ const GroupPage = () => {
         ) : (
           ""
         )}
+      </div>
+
+      {/* основна секція з витратами та учасниками */}
+      <div className="flex flex-col md:flex-row gap-5">
+        {/* секція з витратами */}
+        <div className="blockEl bg-green-700 grow">
+          
+          <Transactions groupId={id} settles={settles} settlesPayed={settlesPayed} getSettles={getSettles} settlesByUser={settlesByUser}/>
+        </div>
       </div>
 
       {/* основна секція з витратами та учасниками */}
@@ -329,15 +397,15 @@ const GroupPage = () => {
               members={groupInfo.members}
               setAddExpensePopup={setAddExpensePopup}
               getExpenses={getExpenses}
+              getSettles={getSettles}
               isCreate={true}
-              
             />
           )}
           {/* вивід всіх витрати в групі */}
           {expenses.map((expense, index) => (
-            <Link to={`/profile/expense/${expense._id}`}>
+            <Link key={index} to={`/profile/expense/${expense._id}`}>
               <div
-                key={index}
+                
                 className="blockEl bg-slate-800 flex flex-col md:flex-row items-center gap-3"
               >
                 <span>

@@ -13,6 +13,7 @@ const ExpenseForm = ({
   existingExpense,
   isEdit,
   isCreate,
+  getSettles
 }) => {
   const { userdata } = useContext(AuthContext);
 
@@ -249,6 +250,7 @@ const ExpenseForm = ({
             setExpense(initExpenseState);
             setAddExpensePopup(false);
             getExpenses();
+            getSettles()
           }
         })
         .catch((error) => {
