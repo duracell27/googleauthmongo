@@ -773,9 +773,16 @@ app.post('/settle', async (req, res) => {
   }
 })
 
+app.get('/settle', async (req, res) => {
+  const userId = req.query.userId
+
+  const response = await settledb.find({$or: [{ower:{$eq: userId}},{lender: {$eq: userId}}]}).populate('ower lender groupId');
+
+  res.status(200).send(response)
+})
+
 app.delete('/settle', async (req, res) => {
   const settleId = req.query.settleId;
-
 
   const response = await settledb.deleteOne({ _id: settleId });
 

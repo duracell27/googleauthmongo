@@ -265,9 +265,6 @@ const GroupPage = () => {
           });
       });
 
-
-        console.log('settles', settlesByUser)
-
         let sortedSettles = settles.sort((a, b) => {
           // Сортування за lender.displayName
           let nameA = a.lender.displayName.toLowerCase();
@@ -305,9 +302,6 @@ const GroupPage = () => {
     getExpenses();
     getSettles();
   }, []);
-
-  console.log(settles)
-  console.log(settlesPayed)
 
   return (
     <div className="bg-green-600 h-screen">

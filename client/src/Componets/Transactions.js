@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 function Transactions({ groupId, settles, settlesPayed, getSettles, settlesByUser }) {
 
   const [showedSettles, setShowedSettles] = useState([]);
+  
   const settleHandler = async (owerId, lenderId, inputId) => {
     const inputValue = window.document.querySelector(`#settleId${inputId}`);
 
