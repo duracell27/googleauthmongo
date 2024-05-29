@@ -23,8 +23,9 @@ const Home = () => {
   },[])
 
   return (
-    <div className='h-screen bg-green-500 flex flex-col gap-10 items-center text-white' >
+    <div className='min-h-screen bg-green-500 flex flex-col gap-10 items-center text-white' >
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Привіт, ми допоможемо тобі розрахувати всі твої борги</div>
+        <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Під час <strong className='text-slate-800'>бета тесту</strong> не гарантуються правильні розрахунки</div>
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Ми вже розрахували {totalSum} грн</div>
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Версія - <span className='bg-slate-800 rounded-lg mb-2 px-1'>0.10</span>
         <div className="text-left mt-2">

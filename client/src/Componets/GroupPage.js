@@ -32,6 +32,7 @@ const GroupPage = () => {
 
   const [addMembersPopup, setAddMembersPopup] = useState(false);
   const [addExpensePopup, setAddExpensePopup] = useState(false);
+  const [settlesPopup, setSettlesPopup] = useState(false);
 
   //   отримуємо список друзів щоб можна було легко додати до групи
   const getFriends = async () => {
@@ -252,18 +253,22 @@ const GroupPage = () => {
         }
       );
       if (response.status === 200) {
-      
-        let settles =response.data.filter(settle=>settle.amount>0)
-        let settlesPayed = response.data.filter(settle=>settle.settled>0)
+        let settles = response.data.filter((settle) => settle.amount > 0);
+        let settlesPayed = response.data.filter((settle) => settle.settled > 0);
 
-
-        settles.forEach(unfiltered => {
-          settlesPayed.forEach(payed => {
-              if (unfiltered.ower._id === payed.ower._id && unfiltered.lender._id === payed.lender._id) {
-                  unfiltered.amount -= payed.settled;
+        if (settlesPayed.length > 0) {
+          settles.forEach((unfiltered) => {
+            settlesPayed.forEach((payed) => {
+              if (
+                unfiltered.ower._id === payed.ower._id &&
+                unfiltered.lender._id === payed.lender._id &&
+                unfiltered.groupId._id === payed.groupId._id
+              ) {
+                unfiltered.amount -= payed.settled;
               }
+            });
           });
-      });
+        }
 
         let sortedSettles = settles.sort((a, b) => {
           // Сортування за lender.displayName
@@ -271,19 +276,19 @@ const GroupPage = () => {
           let nameB = b.lender.displayName.toLowerCase();
           if (nameA < nameB) return -1;
           if (nameA > nameB) return 1;
-      
+
           // Якщо lender.displayName однакові, сортуємо за amount
           return a.amount - b.amount;
-      })
+        });
 
-        const settlesbyId = sortedSettles.filter(item => 
-          item.lender._id === userdata._id || item.ower._id === userdata._id
-      );
-      
+        const settlesbyId = sortedSettles.filter(
+          (item) =>
+            item.lender._id === userdata._id || item.ower._id === userdata._id
+        );
 
         setSettles(sortedSettles);
-        setSettlesByUser(settlesbyId)
-        setSettlesPayed(settlesPayed)
+        setSettlesByUser(settlesbyId);
+        setSettlesPayed(settlesPayed);
       }
     } catch (error) {
       toast.error(error?.response?.data);
@@ -304,7 +309,7 @@ const GroupPage = () => {
   }, []);
 
   return (
-    <div className="bg-green-600 h-screen">
+    <div className="bg-green-600 min-h-screen">
       {/* cсекція з назвою лого і датою */}
       <div className="text-xl md:text-4xl font-bold mb-3 flex items-center gap-5">
         {groupInfo?.image.length > 0 ? (
@@ -340,9 +345,16 @@ const GroupPage = () => {
       {/* основна секція з витратами та учасниками */}
       <div className="flex flex-col md:flex-row gap-5">
         {/* секція з витратами */}
-        <div className="blockEl bg-green-700 grow">
+        <div className="blockEl bg-green-700 grow text-center">
+          <span className=" w-full" onClick={()=>setSettlesPopup(prev=>!prev)}><button className="font-xl font-bold bg-green-800 p-1 px-2 rounded-full" >{settlesPopup?'Закрити':'Розрахунки'}</button></span>
+          {settlesPopup&&(<Transactions
+            groupId={id}
+            settles={settles}
+            settlesPayed={settlesPayed}
+            getSettles={getSettles}
+            settlesByUser={settlesByUser}
+          />)}
           
-          <Transactions groupId={id} settles={settles} settlesPayed={settlesPayed} getSettles={getSettles} settlesByUser={settlesByUser}/>
         </div>
       </div>
 
@@ -398,10 +410,7 @@ const GroupPage = () => {
           {/* вивід всіх витрати в групі */}
           {expenses.map((expense, index) => (
             <Link key={index} to={`/profile/expense/${expense._id}`}>
-              <div
-                
-                className="blockEl bg-slate-800 flex flex-col md:flex-row items-center gap-3"
-              >
+              <div className="blockEl bg-slate-800 flex flex-col md:flex-row items-center gap-3">
                 <span>
                   {moment(expense?.createdAt)
                     .locale("uk")
