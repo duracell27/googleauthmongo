@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../App";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const ExpenseForm = ({
   groupId = "",
@@ -28,6 +29,8 @@ const ExpenseForm = ({
     oweType: "equaly",
     owe: [],
   };
+
+  const navigate = useNavigate()
 
   const [expense, setExpense] = useState(initExpenseState);
   // є 3 степи, 1,2,3, але для режиму перегляну є степ 4 коли відображаються всі етапи зразу
@@ -74,7 +77,7 @@ const ExpenseForm = ({
 
         }
       } catch (error) {
-        toast.error(error?.response?.data);
+        toast.error(error?.response?.data?.message);
       }
     }
   };
@@ -229,13 +232,14 @@ const ExpenseForm = ({
         .then((response) => {
           if (response.status === 200) {
             toast.success(response.data.message);
+            navigate(-1)
             // setExpense(initExpenseState);
             // setAddExpensePopup(false);
             // getExpenses()
           }
         })
         .catch((error) => {
-          toast.error(error?.response?.data);
+          toast.error(error?.response?.data?.message);
         });
     }
     // якщо сет тайп в режимі НЕ едіт то йде створення витрати
@@ -254,7 +258,7 @@ const ExpenseForm = ({
           }
         })
         .catch((error) => {
-          toast.error(error?.response?.data);
+          toast.error(error?.response?.data?.message);
         });
     }
   };

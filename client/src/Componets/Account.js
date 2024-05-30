@@ -42,7 +42,7 @@ const Account = () => {
         setRequests(response.data.requests);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //функція для підтвердження або скачування запиту в друзі
@@ -59,7 +59,7 @@ const Account = () => {
       }
      
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
       
     }
   };
@@ -80,7 +80,7 @@ const Account = () => {
           setFindedUsers(response.data);
         }
       } catch (error) {
-        toast.error(error?.response?.data);
+        toast.error(error?.response?.data?.message);
         
       }
     }
@@ -102,7 +102,7 @@ const Account = () => {
       }
     } catch (error) {
   
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //форматування поля вводу картки грошей
@@ -146,7 +146,7 @@ const Account = () => {
         }
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //зберігаємо валюту картку та мову і відповідності до вибраного whatToChange(curency,language,card)
@@ -168,7 +168,7 @@ const Account = () => {
         getUserData()
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //отримуємо ід валюти щоб змінити дані в ній

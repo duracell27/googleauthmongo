@@ -27,9 +27,12 @@ const Home = () => {
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Привіт, ми допоможемо тобі розрахувати всі твої борги</div>
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Під час <strong className='text-slate-800'>бета тесту</strong> не гарантуються правильні розрахунки</div>
         <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Ми вже розрахували {totalSum} грн</div>
-        <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Версія - <span className='bg-slate-800 rounded-lg mb-2 px-1'>0.10</span>
+        <div className="p-2 m-2 shadow-lg shadow-black/30 text-lg font-bold bg-green-600 text-center rounded-lg">Версія - <span className='bg-slate-800 rounded-lg mb-2 px-1'>0.13</span>
         <div className="text-left mt-2">
 
+        <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.13</span> - виправлено адаплтив, моживість видалити виплату, маркування проблемних виплат</p>
+        <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.12</span> - додано можливість внесення суми повернення, та виведення списку повернень</p>
+        <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.11</span> - додано перегляд розрахунків в групі, виправлення помилок</p>
         <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.10</span> - виправлена реєстрація через гугл, та виправлені баги повязні з цим</p>
         <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.09</span> - перегляд витрат, редагування, видалення</p>
         <p className='bg-slate-800 rounded-lg mb-2 px-1 font-light'><span>0.08</span> - виведення списку витрат в групі, покращення створення витрат</p>

@@ -115,7 +115,6 @@ app.post("/google-auth", async (req, res) => {
       return res.status(200).json(user);
     })
     .catch((err) => {
-      console.log(err);
       return res.status(500).json({ message: "Не вдалось увійти через гугл" });
     });
 });
@@ -123,6 +122,7 @@ app.post("/google-auth", async (req, res) => {
 //пошук користувачів по імені
 app.post("/searchuser", async (req, res) => {
   const searchquery = req.body.searchquery;
+  // if(!searchquery) return res.status(500).json({ message: "Помилка при обробці запиту" })
 
   const users = await userdb
     .find({ displayName: { $regex: searchquery, $options: "i" } })
@@ -132,6 +132,9 @@ app.post("/searchuser", async (req, res) => {
 
 app.get("/getUser", async (req, res) => {
   const userId = req.query.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
+
   const user = await userdb.findById(userId).populate("curency language");
   if (user._id) {
     return res.status(200).json(user);
@@ -145,7 +148,11 @@ app.get("/getUser", async (req, res) => {
 //створення запиту на дружбу
 app.post("/friendrequest", async (req, res) => {
   const userId = req.body.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const userIdToSend = req.body.userIdToSend;
+  if (!userIdToSend)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const isRequestExists = await friendRequestdb.findOne({
     from: userId,
@@ -171,6 +178,8 @@ app.post("/friendrequest", async (req, res) => {
 //отримати дані про друзів та запити друзів
 app.get("/friendrequest", async (req, res) => {
   const userId = req.query.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   //знаходжу ті реквести в яких статус прийнятий і тоя ід в from або to
   const friendsData = await friendRequestdb
@@ -207,7 +216,11 @@ app.get("/friendrequest", async (req, res) => {
 app.put("/friendrequest", async (req, res) => {
   //шукаю реквест по ід і заміняю статус або accepted або rejected
   const reqestId = req.body.reqestId;
+  if (!reqestId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const status = req.body.status;
+  if (!status)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const updatedFriendRequest = await friendRequestdb.findOneAndUpdate(
     { _id: reqestId },
@@ -227,7 +240,11 @@ app.put("/friendrequest", async (req, res) => {
 //Додавання валюти в список
 app.post("/profile/addCurency", async (req, res) => {
   const value = req.body.curencyValue;
+  if (!value)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const desc = req.body.curencyDesc;
+  if (!desc)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newCurency = await curencydb.create({
     curencyValue: value,
@@ -244,7 +261,11 @@ app.post("/profile/addCurency", async (req, res) => {
 //Додавання мови в список
 app.post("/profile/addLanguage", async (req, res) => {
   const value = req.body.langValue;
+  if (!value)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const desc = req.body.langDesc;
+  if (!desc)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newLanguage = await languagedb.create({
     langValue: value,
@@ -261,6 +282,8 @@ app.post("/profile/addLanguage", async (req, res) => {
 //Отримати список мов та валют а також стандартних юзерських мови валюити та картки
 app.get("/profile/info", async (req, res) => {
   const userId = req.query.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const curency = await curencydb.find();
   const language = await languagedb.find();
@@ -284,8 +307,13 @@ app.get("/profile/info", async (req, res) => {
 //зберегти налаштування валюти валюти та номеру картки
 app.put("/profile/settings", async (req, res) => {
   const id = req.body.id;
+  // if (!id) return res.status(500).json({ message: "Помилка при обробці запиту" })
   const userId = req.body.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const whatToChange = req.body.whatToChange;
+  if (!whatToChange)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   if (!id) {
     res.status(404).json({ message: "Не передано ід" });
@@ -323,9 +351,14 @@ app.put("/profile/settings", async (req, res) => {
 // створити групу
 app.post("/group", async (req, res) => {
   const userId = req.body.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const groupName = req.body.groupName;
-
+  if (!groupName)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const groupImage = req.body.groupImage || "";
+  if (!groupImage)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newGroup = await groupdb.create({
     name: groupName,
@@ -343,6 +376,8 @@ app.post("/group", async (req, res) => {
 //отримати списк груп
 app.get("/group", async (req, res) => {
   const groupId = req.query.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const group = await groupdb
     .findOne({ _id: groupId })
@@ -354,6 +389,8 @@ app.get("/group", async (req, res) => {
 //отримати списк груп
 app.get("/groupAll", async (req, res) => {
   const userId = req.query.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const groups = await groupdb
     .find({ members: userId })
@@ -365,9 +402,14 @@ app.get("/groupAll", async (req, res) => {
 //редагування групи: імя та картинка
 app.put("/group", async (req, res) => {
   const groupId = req.body.groupId;
-
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const name = req.body.name;
+  if (!name)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const image = req.body.image;
+  if (!image)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const updatedGroup = await groupdb.findOneAndUpdate(
     { _id: groupId },
@@ -385,6 +427,8 @@ app.put("/group", async (req, res) => {
 // видалити групу
 app.delete("/group", async (req, res) => {
   const groupId = req.query.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const response = await groupdb.deleteOne({ _id: groupId });
 
@@ -397,7 +441,11 @@ app.delete("/group", async (req, res) => {
 //додавання учасника до групи
 app.post("/group/members", async (req, res) => {
   const groupId = req.body.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const userId = req.body.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const group = await groupdb.findOne({ _id: groupId });
   if (group.members.includes(userId)) {
@@ -418,7 +466,11 @@ app.post("/group/members", async (req, res) => {
 //видалення учасника з групи
 app.delete("/group/members", async (req, res) => {
   const groupId = req.query.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const deleteuserId = req.query.delUserId;
+  if (!deleteuserId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const response = await groupdb.updateOne(
     { _id: groupId },
@@ -434,6 +486,8 @@ app.delete("/group/members", async (req, res) => {
 //отримати посилання на картинку від aws
 app.post("/aws/getIngameUrl", async (req, res) => {
   const file = req.files.file;
+  if (!file)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   if (file.mimetype.includes("heic") || file.mimetype.includes("heif")) {
     const changedBuffer = await convert({
@@ -442,8 +496,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       quality: 1, // the jpeg compression quality, between 0 and 1
     });
     file.data = changedBuffer;
-    console.log("from heic");
-    console.log("from heic buffer", file.data);
+    
     //еееексперіменти
     sharp(file.data)
       .resize(200, 200, {
@@ -531,37 +584,6 @@ app.post("/aws/getIngameUrl", async (req, res) => {
         }
       });
   }
-
-  //еееексперіменти
-
-  // if (file) {
-  //   const s3Client = new S3Client({
-  //     region: "eu-north-1",
-  //     credentials: {
-  //       accessKeyId: process.env.AWS_ACCESS_KEY,
-  //       secretAccessKey: process.env.AWS_SECRET_KEY,
-  //     },
-  //   });
-
-  //   const randomId = uniqid();
-  //   const ext = file.name.split(".").pop();
-  //   const newFileName = randomId + "." + ext;
-
-  //   await s3Client.send(
-  //     new PutObjectCommand({
-  //       Bucket: process.env.BUCKET_NAME,
-  //       Key: newFileName,
-  //       Body: file.data,
-  //       ACL: "public-read",
-  //       ContentType: file.mimetype,
-  //     })
-  //   );
-
-  //   const link =
-  //     "https://" + process.env.BUCKET_NAME + ".s3.amazonaws.com/" + newFileName;
-
-  //   res.status(200).json(link);
-  // }
 });
 
 //робота з групами кінець
@@ -570,6 +592,8 @@ app.post("/aws/getIngameUrl", async (req, res) => {
 //створення витрати
 app.post("/expenses", async (req, res) => {
   const expenseData = req.body;
+  if (!expenseData)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newExpense = await expensedb.create(expenseData);
   const response = await newExpense.save();
@@ -589,7 +613,11 @@ app.post("/expenses", async (req, res) => {
 //редагування витрати
 app.put("/expenses", async (req, res) => {
   const expenseId = req.body.expenseId;
+  if (!expenseId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
   const expense = req.body.expense;
+  if (!expense)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const updatedExpense = await expensedb.findOneAndUpdate(
     { _id: expenseId },
@@ -606,6 +634,8 @@ app.put("/expenses", async (req, res) => {
 //отримати 1 витрату по ід
 app.get("/expenses", async (req, res) => {
   const expenseId = req.query.expenseId;
+  if (!expenseId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const response = await expensedb
     .findOne({ _id: expenseId })
@@ -624,10 +654,16 @@ app.get("/expenses", async (req, res) => {
 // видалити витрату
 app.delete("/expenses", async (req, res) => {
   const expenseId = req.query.expenseId;
+  if (!expenseId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
+
+  const expense = await expensedb.findOne({_id: expenseId})
 
   const response = await expensedb.deleteOne({ _id: expenseId });
 
   if (response.deletedCount == 1) {
+    await groupdb.updateOne({_id: expense.group},{ $pull: { expenses: expenseId } })
+
     res.status(200).json({ message: "Витрата видалена" });
   } else {
     res.status(404).json({ message: "Витрата не видалена" });
@@ -636,6 +672,8 @@ app.delete("/expenses", async (req, res) => {
 // отримати всі витрати по ід групи
 app.get("/expensesAll", async (req, res) => {
   const groupId = req.query.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const response = await expensedb
     .find({ group: groupId })
@@ -668,28 +706,35 @@ app.get("/expensesSum", async (req, res) => {
 
 //робота з розрахунками початок
 
+// отримати розрахунки(танзакції) по ід групи
 app.get("/calculateSettle", async function (req, res) {
   const groupId = req.query.groupId;
+  if (!groupId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
-  await settledb.deleteMany({$and:[ {groupId: groupId}, {settled: {$eq: 0}}]})
-
+  // перед початком актуальних розрахунків видалямо старі окрім тих хто сеттлед (вони залишаються)
+  await settledb.deleteMany({
+    $and: [{ groupId: groupId }, { settled: { $eq: 0 } }],
+  });
+  // для розрахунку отримуємо всі експенси та учасників групи
   const group = await groupdb
     .findById(groupId)
     .populate("members")
     .select("members -_id");
+
   const members = group.members;
   const expenses = await expensedb
     .find({ group: groupId })
     .populate("land.user owe.user");
-
+  // якщо є мембери та екпенси то починаємо розрахунок
   if (members.length > 0 && expenses.length > 0) {
-    // Initialize sums object for each member
+    // для кожного мембера робимо запис і сума 0
     let sums = members.reduce((acc, member) => {
       acc[member._id] = 0;
       return acc;
     }, {});
 
-    // Iterate over the expenses array to update the sums
+    // проходимся по масиву і сумуємо хто в лендерах і мінусуємо тих хто в оверах
     expenses.forEach((expense) => {
       expense.land.forEach((land) => {
         sums[land.user._id] += land.sum;
@@ -699,7 +744,7 @@ app.get("/calculateSettle", async function (req, res) {
       });
     });
 
-    // Prepare the result
+    // готуємо результат
     const result = members.map((member) => {
       return {
         _id: member._id,
@@ -708,6 +753,8 @@ app.get("/calculateSettle", async function (req, res) {
         sum: sums[member._id].toFixed(2),
       };
     });
+
+    // якщо є результат то фільтруємо і готуємо масив транзакцій які будуть повертатись на фронтенд
 
     if (result.length > 0) {
       const positives = result
@@ -728,15 +775,13 @@ app.get("/calculateSettle", async function (req, res) {
 
         const amount = Math.min(positiveSum, -negativeSum);
 
-        transactions.push(
-          {
-            groupId: groupId,
-            ower: negative,
-            lender: positive,
-            amount: amount.toFixed(2),
-            settled: 0
-          }
-        );
+        transactions.push({
+          groupId: groupId,
+          ower: negative,
+          lender: positive,
+          amount: amount.toFixed(2),
+          settled: 0,
+        });
 
         positive.sum = (positiveSum - amount).toFixed(2);
         negative.sum = (negativeSum + amount).toFixed(2);
@@ -748,20 +793,23 @@ app.get("/calculateSettle", async function (req, res) {
           negatives.shift();
         }
       }
-      await settledb.create(transactions)
+      // створюємо масив транзакцій в базі даних
+      await settledb.create(transactions);
+      // грузимо створені транзакції з бази
+      const transactionArray = await settledb
+        .find({ groupId: groupId })
+        .populate("ower lender");
 
-      const transactionArray = await settledb.find({groupId: groupId}).populate('ower lender')
-
-      res.status(200).send(transactionArray)
-  
+      res.status(200).send(transactionArray);
     }
   }
-
-  
 });
 
-app.post('/settle', async (req, res) => {
+// створення розрахунку з прапорем сеттл (виплати)
+app.post("/settle", async (req, res) => {
   const settleData = req.body;
+  if (!settleData)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newSettle = await settledb.create(settleData);
   const response = await newSettle.save();
@@ -771,18 +819,25 @@ app.post('/settle', async (req, res) => {
   } else {
     res.status(404).json({ message: "Розрахунок не створено" });
   }
-})
+});
+// отримати всі розрахунки по ід користувача
+app.get("/settle", async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
-app.get('/settle', async (req, res) => {
-  const userId = req.query.userId
+  const settles = await settledb
+    .find({ $or: [{ ower: { $eq: userId } }, { lender: { $eq: userId } }] })
+    .populate("ower lender groupId");
 
-  const response = await settledb.find({$or: [{ower:{$eq: userId}},{lender: {$eq: userId}}]}).populate('ower lender groupId');
+  res.status(200).send(settles);
+});
 
-  res.status(200).send(response)
-})
-
-app.delete('/settle', async (req, res) => {
+// видалення оплати за розрахунки
+app.delete("/settle", async (req, res) => {
   const settleId = req.query.settleId;
+  if (!settleId)
+    return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const response = await settledb.deleteOne({ _id: settleId });
 
@@ -791,7 +846,7 @@ app.delete('/settle', async (req, res) => {
   } else {
     res.status(404).json({ message: "Розрахунок не видалено" });
   }
-})
+});
 
 //робота з розрахунками кінець
 

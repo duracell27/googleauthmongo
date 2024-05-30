@@ -37,7 +37,7 @@ const Groups = () => {
         setGroups(response.data);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //отримання посилання на аватар від авс
@@ -64,7 +64,7 @@ const Groups = () => {
       
         }
       } catch (error) {
-        toast.error(error?.response?.data);
+        toast.error(error?.response?.data?.message);
       }
     }
   };
@@ -90,7 +90,7 @@ const Groups = () => {
         getGroups();
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   // розраховує загальний баланс користувача в групі чи він винен чи ні

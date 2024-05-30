@@ -50,7 +50,7 @@ const GroupPage = () => {
         setFriends(response.data.friends);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //   завантажуємо основну інформацію про групу
@@ -69,7 +69,7 @@ const GroupPage = () => {
         setGroupInfo(response.data);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   // отримати всі витрати групи
@@ -88,7 +88,7 @@ const GroupPage = () => {
         setExpenses(response.data);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //   видалямо користувача з групи
@@ -109,7 +109,7 @@ const GroupPage = () => {
         getGroupInfo();
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //   додаємо учасника до групи
@@ -132,7 +132,7 @@ const GroupPage = () => {
         }
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   //   пошук користувачів за іменем
@@ -152,7 +152,7 @@ const GroupPage = () => {
           setFindedUsers(response.data);
         }
       } catch (error) {
-        toast.error(error?.response?.data);
+        toast.error(error?.response?.data?.message);
       }
     }
   };
@@ -174,7 +174,7 @@ const GroupPage = () => {
         window.location.href = "/profile/groups";
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   // розрахунок суми по витраті для користувача, винен він чи винні йому
@@ -258,7 +258,7 @@ const GroupPage = () => {
 
         if (settlesPayed.length > 0) {
           settles.forEach((unfiltered) => {
-            settlesPayed.forEach((payed) => {
+            settlesPayed.forEach((payed, index) => {
               if (
                 unfiltered.ower._id === payed.ower._id &&
                 unfiltered.lender._id === payed.lender._id &&
@@ -266,6 +266,30 @@ const GroupPage = () => {
               ) {
                 unfiltered.amount -= payed.settled;
               }
+              // //тестовий блок
+              else if (
+                unfiltered.groupId._id === payed.groupId._id &&
+                unfiltered.ower._id === payed.lender._id &&
+                unfiltered.lender._id === payed.ower._id
+              ) {
+                unfiltered.amount += payed.settled;
+              }
+              else if(
+                unfiltered.groupId._id === payed.groupId._id && unfiltered.ower._id !== payed.lender._id &&
+                unfiltered.lender._id !== payed.ower._id && unfiltered.ower._id !== payed.ower._id &&
+                unfiltered.lender._id !== payed.lender._id
+              ){
+                 
+                  payed.warn = true
+                  payed.warnId = index
+                  
+                  const o = payed.ower
+                  const l = payed.lender
+                  const a = payed.settled
+                  settles.push({...payed, lender: o, ower: l, amount: a, warning: true, warnId: index, message:`Ця сума виникла в наслідок перерахнку витрат. Поверніть зазначені кошти та видаліть запис у Виплатах зі знаком оклику в трикутнику та одинаковими ід=${index}`})
+                  
+              }
+              // //тестовий блок
             });
           });
         }
@@ -291,7 +315,7 @@ const GroupPage = () => {
         setSettlesPayed(settlesPayed);
       }
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
 
@@ -346,15 +370,23 @@ const GroupPage = () => {
       <div className="flex flex-col md:flex-row gap-5">
         {/* секція з витратами */}
         <div className="blockEl bg-green-700 grow text-center">
-          <span className=" w-full" onClick={()=>setSettlesPopup(prev=>!prev)}><button className="font-xl font-bold bg-green-800 p-1 px-2 rounded-full" >{settlesPopup?'Закрити':'Розрахунки'}</button></span>
-          {settlesPopup&&(<Transactions
-            groupId={id}
-            settles={settles}
-            settlesPayed={settlesPayed}
-            getSettles={getSettles}
-            settlesByUser={settlesByUser}
-          />)}
-          
+          <span
+            className=" w-full"
+            onClick={() => setSettlesPopup((prev) => !prev)}
+          >
+            <button className="font-xl font-bold bg-green-800 p-1 px-2 rounded-full">
+              {settlesPopup ? "Закрити" : "Розрахунки"}
+            </button>
+          </span>
+          {settlesPopup && (
+            <Transactions
+              groupId={id}
+              settles={settles}
+              settlesPayed={settlesPayed}
+              getSettles={getSettles}
+              settlesByUser={settlesByUser}
+            />
+          )}
         </div>
       </div>
 

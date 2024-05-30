@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 const ShowExpense = () => {
+  //expenseId
   const { id } = useParams();
   const initExpenseState = {
     name: "",
@@ -37,7 +38,7 @@ const ShowExpense = () => {
       );
       setExpense(response.data);
     } catch (error) {
-      toast.error(error?.response?.data);
+      toast.error(error?.response?.data?.message);
     }
   };
   // при натисканні кнопки видалити, видалямо витрату
@@ -59,7 +60,7 @@ const ShowExpense = () => {
           navigate(-1)
         }
       } catch (error) {
-        toast.error(error?.response?.data);
+        toast.error(error?.response?.data?.message);
       }
    }
     
