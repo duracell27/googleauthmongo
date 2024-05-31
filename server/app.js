@@ -488,7 +488,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
   const file = req.files.file;
   if (!file)
     return res.status(500).json({ message: "Помилка при обробці запиту" });
-
+  console.log('файл є')
   if (file.mimetype.includes("heic") || file.mimetype.includes("heif")) {
     const changedBuffer = await convert({
       buffer: file.data, // the HEIC file buffer
@@ -496,7 +496,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       quality: 1, // the jpeg compression quality, between 0 and 1
     });
     file.data = changedBuffer;
-    
+    console.log('файл є хейк')
     //еееексперіменти
     sharp(file.data)
       .resize(200, 200, {
@@ -506,6 +506,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       .toBuffer()
       .then(async function (outputBuffer) {
         file.data = outputBuffer;
+        console.log('файл є в шарп')
 
         if (file) {
           const s3Client = new S3Client({
@@ -515,12 +516,12 @@ app.post("/aws/getIngameUrl", async (req, res) => {
               secretAccessKey: process.env.AWS_SECRET_KEY,
             },
           });
-
+          console.log('створився інстант с3')
           const randomId = uniqid();
           const ext = file.name.split(".").pop();
           const newFileName = randomId + "." + ext;
 
-          await s3Client.send(
+         const swa = await s3Client.send(
             new PutObjectCommand({
               Bucket: process.env.BUCKET_NAME,
               Key: newFileName,
@@ -530,11 +531,16 @@ app.post("/aws/getIngameUrl", async (req, res) => {
             })
           );
 
+          console.log('після сенд')
+          console.log('відповідь', swa)
+
           const link =
             "https://" +
             process.env.BUCKET_NAME +
             ".s3.amazonaws.com/" +
             newFileName;
+
+            console.log('лінка на файл',link)
 
           res.status(200).json(link);
         }
