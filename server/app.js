@@ -521,7 +521,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
           const ext = file.name.split(".").pop();
           const newFileName = randomId + "." + ext;
 
-         const swa = await s3Client.send(
+         await s3Client.send(
             new PutObjectCommand({
               Bucket: process.env.BUCKET_NAME,
               Key: newFileName,
@@ -531,8 +531,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
             })
           );
 
-          console.log('після сенд')
-          console.log('відповідь', swa)
+          
 
           const link =
             "https://" +
@@ -540,7 +539,7 @@ app.post("/aws/getIngameUrl", async (req, res) => {
             ".s3.amazonaws.com/" +
             newFileName;
 
-            console.log('лінка на файл',link)
+         
 
           res.status(200).json(link);
         }
@@ -558,6 +557,8 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       .toBuffer()
       .then(async function (outputBuffer) {
         file.data = outputBuffer;
+        console.log('файл є в шарп')
+        console.log('файл сам', file)
 
         if (file) {
           const s3Client = new S3Client({
@@ -568,11 +569,15 @@ app.post("/aws/getIngameUrl", async (req, res) => {
             },
           });
 
+          console.log('створено інстанс авс')
+
           const randomId = uniqid();
           const ext = file.name.split(".").pop();
           const newFileName = randomId + "." + ext;
 
-          await s3Client.send(
+          console.log('новий файл нейм', newFileName);
+
+          const swa = await s3Client.send(
             new PutObjectCommand({
               Bucket: process.env.BUCKET_NAME,
               Key: newFileName,
@@ -582,12 +587,15 @@ app.post("/aws/getIngameUrl", async (req, res) => {
             })
           );
 
+          console.log('після сенд')
+          console.log('відповідь', swa)
+
           const link =
             "https://" +
             process.env.BUCKET_NAME +
             ".s3.amazonaws.com/" +
             newFileName;
-
+            console.log('лінка на файл',link)
           res.status(200).json(link);
         }
       });
