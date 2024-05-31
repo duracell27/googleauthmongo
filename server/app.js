@@ -547,6 +547,8 @@ app.post("/aws/getIngameUrl", async (req, res) => {
       });
     //еееексперіменти
   } else {
+
+    console.log('а то не хейф ')
     //еееексперіменти
     sharp(file.data)
       .resize(200, 200, {
