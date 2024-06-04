@@ -136,7 +136,7 @@ function Transactions({
                             : "text-red-500"
                         } text-base`}
                       >
-                        {transaction.amount} {userdata.curency.curencyValue}
+                        {transaction.amount} {userdata.curency.curencySymbol}
                       </span>
                       {transaction.warn ? (
                         <div className="flex items-center gap-2">
@@ -277,7 +277,7 @@ function Transactions({
                     ) : (
                       <div className="bg-slate-800 rounded-full gap-2 pl-2 p-1 flex items-center">
                         <span className="text-base ">
-                          {transaction.amount} {userdata.curency.curencyValue}
+                          {transaction.amount} {userdata.curency.curencySymbol}
                         </span>
 
                         <FontAwesomeIcon
@@ -375,7 +375,7 @@ function Transactions({
                     <div className="bg-slate-800 rounded-full p-1 pl-2 flex gap-2 items-center">
                       <FontAwesomeIcon icon={faMoneyBillWave} />
                       <span className="text-base">
-                        {transaction.settled} {userdata.curency.curencyValue}
+                        {transaction.settled} {userdata.curency.curencySymbol}
                       </span>
                       <FontAwesomeIcon
                         className="bg-orange-500 p-1 w-4 h-4 rounded-full cursor-pointer"

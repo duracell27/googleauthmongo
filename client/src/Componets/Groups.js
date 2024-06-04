@@ -61,7 +61,6 @@ const Groups = () => {
         );
         if (response.status === 200) {
           setGroupUploadAvatar(response.data);
-      
         }
       } catch (error) {
         toast.error(error?.response?.data?.message);
@@ -115,6 +114,8 @@ const Groups = () => {
   useEffect(() => {
     getGroups();
   }, []);
+
+  console.log("curency", userdata);
 
   return (
     <div className="bg-green-600 h-screen">
@@ -180,45 +181,101 @@ const Groups = () => {
               to={`/profile/groups/${group._id}`}
               className="block blockEl bg-slate-800"
             >
-              <div className="font-xl font-bold px-2 flex flex-col md:flex-row gap-3 items-center">
-                {moment(group.createdAt).locale("uk").format("DD MMM YYYY")}
-                {group.image.length > 0 ? (
-                  <img
-                    src={group.image}
-                    alt="groupAvatar"
-                    className="w-16 h-16 rounded-full "
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    className="w-6 h-6 p-6 bg-slate-600 rounded-full"
-                    icon={faUsers}
-                  />
-                )}
-                <div className="flex flex-col gap-2 grow">
-                  <span className="">{group.name}</span>
-                  <div className="flex items-center gap-2">
-                    {group.members.map((member, index) => (
-                      <img
-                        className="w-6 h-6 rounded-full"
-                        src={member.image}
-                        alt="useravatar"
-                      />
-                    ))}
+              <div className="font-xl font-bold px-2 flex flex-col md:flex-row justify-between items-center">
+                <div className="hidden md:flex md:items-center md:gap-3 md:justify-between md:w-full">
+                  <span>
+                    {moment(group.createdAt).locale("uk").format("DD MMM YYYY")}
+                  </span>
+
+                  {group.image.length > 0 ? (
+                    <img
+                      src={group.image}
+                      alt="groupAvatar"
+                      className="w-16 h-16 rounded-full "
+                    />
+                  ) : (
+                    <FontAwesomeIcon
+                      className="w-6 h-6 p-6 bg-slate-600 rounded-full"
+                      icon={faUsers}
+                    />
+                  )}
+                  <div className="flex flex-col gap-2 grow">
+                    <span className="">{group.name}</span>
+                    <div className="flex items-center gap-2">
+                      {group.members.map((member, index) => (
+                        <img
+                          key={index}
+                          className="w-6 h-6 rounded-full"
+                          src={member.image}
+                          alt="useravatar"
+                        />
+                      ))}
+                    </div>
                   </div>
+                  {/* вираховує скільки ти винен в цій групі */}
+                  <span
+                    className={`${
+                      calculateNetTotalUser(group.expenses) > 0
+                        ? "text-green-500"
+                        : calculateNetTotalUser(group.expenses) == 0
+                        ? "text-white"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {calculateNetTotalUser(group.expenses).toFixed(2)}{" "}
+                    {userdata.curency.curencySymbol}
+                  </span>
                 </div>
-                {/* вираховує скільки ти винен в цій групі */}
-                <span
-                  className={`${
-                    calculateNetTotalUser(group.expenses) > 0
-                      ? "text-green-500"
-                      : calculateNetTotalUser(group.expenses) == 0
-                      ? "text-white"
-                      : "text-red-500"
-                  }`}
-                >
-                  {calculateNetTotalUser(group.expenses).toFixed(2)}{" "}
-                  {userdata.curency.curencyValue}
-                </span>
+
+                <div className="md:hidden w-full text-sm flex gap-1 items-center justify-between">
+                  <div className="">
+                    {group.image.length > 0 ? (
+                      <img
+                        src={group.image}
+                        alt="groupAvatar"
+                        className="w-16 h-16 rounded-full "
+                      />
+                    ) : (
+                      <FontAwesomeIcon
+                        className="w-6 h-6 p-6 bg-slate-600 rounded-full"
+                        icon={faUsers}
+                      />
+                    )}
+                  </div>
+                  <div className="">
+                    <div className="flex flex-col gap-1 grow">
+                      <span className="">{group.name}</span>
+                      <span className="text-slate-500">
+                        {moment(group.createdAt)
+                          .locale("uk")
+                          .format("DD MMM YYYY")}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {group.members.map((member, index) => (
+                          <img
+                            key={index}
+                            className="w-6 h-6 rounded-full"
+                            src={member.image}
+                            alt="useravatar"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* вираховує скільки ти винен в цій групі */}
+                  <span
+                    className={`${
+                      calculateNetTotalUser(group.expenses) > 0
+                        ? "text-green-500"
+                        : calculateNetTotalUser(group.expenses) == 0
+                        ? "text-white"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {calculateNetTotalUser(group.expenses).toFixed(2)}{" "}
+                    {userdata.curency.curencySymbols}
+                  </span>
+                </div>
               </div>
             </Link>
           ))}

@@ -273,21 +273,28 @@ const GroupPage = () => {
                 unfiltered.lender._id === payed.ower._id
               ) {
                 unfiltered.amount += payed.settled;
-              }
-              else if(
-                unfiltered.groupId._id === payed.groupId._id && unfiltered.ower._id !== payed.lender._id &&
-                unfiltered.lender._id !== payed.ower._id && unfiltered.ower._id !== payed.ower._id &&
+              } else if (
+                unfiltered.groupId._id === payed.groupId._id &&
+                unfiltered.ower._id !== payed.lender._id &&
+                unfiltered.lender._id !== payed.ower._id &&
+                unfiltered.ower._id !== payed.ower._id &&
                 unfiltered.lender._id !== payed.lender._id
-              ){
-                 
-                  payed.warn = true
-                  payed.warnId = index
-                  
-                  const o = payed.ower
-                  const l = payed.lender
-                  const a = payed.settled
-                  settles.push({...payed, lender: o, ower: l, amount: a, warning: true, warnId: index, message:`Ця сума виникла в наслідок перерахнку витрат. Поверніть зазначені кошти та видаліть запис у Виплатах зі знаком оклику в трикутнику та одинаковими ід=${index}`})
-                  
+              ) {
+                payed.warn = true;
+                payed.warnId = index;
+
+                const o = payed.ower;
+                const l = payed.lender;
+                const a = payed.settled;
+                settles.push({
+                  ...payed,
+                  lender: o,
+                  ower: l,
+                  amount: a,
+                  warning: true,
+                  warnId: index,
+                  message: `Ця сума виникла в наслідок перерахнку витрат. Поверніть зазначені кошти та видаліть запис у Виплатах зі знаком оклику в трикутнику та одинаковими ід=${index}`,
+                });
               }
               // //тестовий блок
             });
@@ -409,11 +416,11 @@ const GroupPage = () => {
             <div className=" flex flex-col md:flex-row gap-2">
               <span className="bloclEl bg-slate-800 p-1 rounded-lg">
                 Загальні витрати групи: {calculateGroupTotal()}{" "}
-                {userdata.curency.curencyValue}
+                {userdata.curency.curencySymbol}
               </span>
               <span className="bloclEl bg-slate-800 p-1 rounded-lg">
                 Ваші загальні витрати: {calculateUserTotal()}{" "}
-                {userdata.curency.curencyValue}
+                {userdata.curency.curencySymbol}
               </span>
               <span
                 className={`${
@@ -423,7 +430,7 @@ const GroupPage = () => {
                 } bloclEl bg-slate-800 p-1 rounded-lg`}
               >
                 {calculateNetTotalUser() > 0 ? "Вам винні: " : "Ви винні"}{" "}
-                {calculateNetTotalUser()} {userdata.curency.curencyValue}
+                {calculateNetTotalUser()} {userdata.curency.curencySymbol}
               </span>{" "}
             </div>
           </div>
@@ -439,10 +446,11 @@ const GroupPage = () => {
               isCreate={true}
             />
           )}
+
           {/* вивід всіх витрати в групі */}
           {expenses.map((expense, index) => (
             <Link key={index} to={`/profile/expense/${expense._id}`}>
-              <div className="blockEl bg-slate-800 flex flex-col md:flex-row items-center gap-3">
+              <div className="hidden blockEl bg-slate-800 md:flex items-center gap-3">
                 <span>
                   {moment(expense?.createdAt)
                     .locale("uk")
@@ -472,8 +480,7 @@ const GroupPage = () => {
                       />
                       <span>{expense?.land[0]?.user?.displayName}</span>{" "}
                       {"оплат."} {expense?.land[0]?.sum}{" "}
-                      {userdata.curency.curencyValue}
-                      {/* {expense?.land[0]?.user?.curency?.curencyValue} */}
+                      {userdata.curency.curencySymbol}
                     </span>
                   ) : (
                     //вивід аватарок хто платив
@@ -487,14 +494,12 @@ const GroupPage = () => {
                       ))}
                       <span>оплатили</span>
                       <span>
-                        {expense?.price} {userdata.curency.curencyValue}
+                        {expense?.price} {userdata.curency.curencySymbol}
                       </span>
                     </span>
                   )}
                 </div>
-                {/* <div className="flex items-center gap-2">
-                <span><FontAwesomeIcon icon={fa}/></span>
-              </div> */}
+
                 {/* вивід вашої частки оплати */}
                 <span
                   className={`${
@@ -505,9 +510,84 @@ const GroupPage = () => {
                 >
                   <strong>
                     {calculateNetAmount(expense, userdata?._id)}{" "}
-                    {userdata?.curency?.curencyValue}
+                    {userdata?.curency?.curencySymbol}
                   </strong>
                 </span>
+              </div>
+
+              <div className="md:hidden  blockEl bg-slate-800 flex items-center gap-3 text-sm">
+                <div className="">
+                  {expense.image.length > 0 ? (
+                    <img
+                      src={expense.image}
+                      className="w-16 h-16 rounded-full"
+                      alt="expenseimg"
+                    />
+                  ) : (
+                    <span className="flex justify-center items-center bg-slate-600 w-16 h-16 rounded-full">
+                      <FontAwesomeIcon icon={faImage} />
+                    </span>
+                  )}
+                </div>
+                <div className="grow">
+                  <div className="flex flex-col gap-2 grow">
+                    {/* вивід того хто оплатив */}
+                    <div className="flex justify-between">
+                      <div className="flex flex-col">
+                      <span className="">{expense.name}</span>
+                      <span className="text-slate-500">
+                        {moment(expense?.createdAt)
+                          .locale("uk")
+                          .format("DD MMM YYYY")}
+                      </span>
+                      </div>
+                      {/* вивід вашої частки оплати */}
+                <span
+                  className={`${
+                    calculateNetAmount(expense, userdata?._id) < 0
+                      ? "text-red-500"
+                      : "text-green-400"
+                  }`}
+                >
+                  <strong>
+                    {calculateNetAmount(expense, userdata?._id)}{" "}
+                    {userdata?.curency?.curencySymbol}
+                  </strong>
+                </span>
+                    </div>
+
+                    {expense.landMulti === false ? (
+                      <span className="text-slate-500 flex gap-2 items-center">
+                        <img
+                          className="w-6 h-6 rounded-full"
+                          src={expense?.land[0]?.user?.image}
+                          alt="avatar"
+                        />
+                        <span>{expense?.land[0]?.user?.displayName}{" "}
+                        {"оплат."} {expense?.land[0]?.sum}{" "}
+                        {userdata.curency.curencySymbol}
+                        </span>
+                      </span>
+                    ) : (
+                      //вивід аватарок хто платив
+                      <span className="text-slate-500 flex gap-2 items-center">
+                        {expense?.land?.map((user, index) => (
+                          <img
+                            key={index}
+                            className="w-6 h-6 rounded-full"
+                            src={user.user.image}
+                          ></img>
+                        ))}
+                        <span>оплатили</span>
+                        <span>
+                          {expense?.price} {userdata.curency.curencySymbol}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                
               </div>
             </Link>
           ))}

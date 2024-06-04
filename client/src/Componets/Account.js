@@ -222,7 +222,7 @@ const Account = () => {
   }, []);
 
   return (
-    <div className="bg-green-600 h-screen">
+    <div className="bg-green-600 min-h-screen">
       <h1 className="text-4xl font-bold">Акаунт</h1>
       <div className="blockEl bg-green-700 ">
         {/* секція друзі початок */}

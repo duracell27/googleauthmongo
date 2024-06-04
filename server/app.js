@@ -102,6 +102,8 @@ app.post("/google-auth", async (req, res) => {
           email: email,
           image: picture,
           isGoogleAuth: true,
+          curency: '6634d18e65ca60af6619a518', // default for Ukraine UAH
+          language: '6634d572ebffe4f500e02e0d' // default for Ukraine UKRAINIAN
         });
         await user
           .save()
@@ -357,8 +359,8 @@ app.post("/group", async (req, res) => {
   if (!groupName)
     return res.status(500).json({ message: "Помилка при обробці запиту" });
   const groupImage = req.body.groupImage || "";
-  if (!groupImage)
-    return res.status(500).json({ message: "Помилка при обробці запиту" });
+  // if (!groupImage)
+  //   return res.status(500).json({ message: "Помилка при обробці запиту" });
 
   const newGroup = await groupdb.create({
     name: groupName,
@@ -870,3 +872,6 @@ app.delete("/settle", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`server start on port ${PORT}`);
 });
+
+
+

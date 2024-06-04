@@ -26,7 +26,7 @@ const Headers = () => {
 
         {Object.keys(userdata).length ? (
           <div className="flex gap-2 items-center">
-            <NavLink to={"/profile"} className='p-1 flex gap-2 bg-green-700 rounded-full pl-2'>
+            <NavLink to={"/profile/friends"} className='p-1 flex gap-2 bg-green-700 rounded-full pl-2'>
               <span className="truncate">{userdata?.displayName}</span>
               <img
                 className="w-6 h-6 rounded-full"

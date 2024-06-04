@@ -2,7 +2,7 @@ import React from 'react'
 
 const AddExpense = () => {
   return (
-    <div>AddExpense</div>
+    <div>я ще не готова :(</div>
   )
 }
 
