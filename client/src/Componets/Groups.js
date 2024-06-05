@@ -34,6 +34,7 @@ const Groups = () => {
         }
       );
       if (response.status === 200) {
+        response.data.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt))
         setGroups(response.data);
       }
     } catch (error) {

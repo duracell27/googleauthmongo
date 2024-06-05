@@ -152,6 +152,7 @@ app.post("/friendrequest", async (req, res) => {
   const userId = req.body.userId;
   if (!userId)
     return res.status(500).json({ message: "Помилка при обробці запиту" });
+  
   const userIdToSend = req.body.userIdToSend;
   if (!userIdToSend)
     return res.status(500).json({ message: "Помилка при обробці запиту" });

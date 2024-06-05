@@ -8,6 +8,7 @@ import {
   faCoins,
   faMoneyBillWave,
   faUserGroup,
+  faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 
@@ -15,6 +16,8 @@ const Friends = () => {
   const { userdata } = useContext(AuthContext);
   const [settles, setSettles] = useState([]);
   const [friends, setFriends] = useState([]);
+
+  const [friendPopupOpenId, setFriendPopupOpenId] = useState([]);
 
   // отримати всі ттранзакціх по розрахунках звязаних з ід користувача
   const getSettles = () => {
@@ -50,12 +53,42 @@ const Friends = () => {
         },
       })
       .then((response) => {
-        setFriends(response.data.friends);
+        if(response.status === 200) {
+          setFriends(response.data.friends);
+        }
       })
       .catch((error) => {
         toast.error(error?.response?.data?.message);
       });
   };
+  // для людей які не друзі а є розрахунки, то можна додати в друзі
+  const addFriendHandler = async (userToSendId) => {
+    try {
+      const response = await axios.post(
+        process.env.REACT_APP_BACK_URL + "/friendrequest",
+        {
+          userId: userdata._id,
+          userIdToSend: userToSendId,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      if (response.status === 200) {
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+    }
+  };
+
+  const friendPopupHandler = (id) => {
+    if(friendPopupOpenId.includes(id)){
+      setFriendPopupOpenId(friendPopupOpenId.filter((item) => item!== id));
+    }else{
+      setFriendPopupOpenId([...friendPopupOpenId, id]);
+    }
+  }
 
   useEffect(() => {
     getSettles();
@@ -65,36 +98,32 @@ const Friends = () => {
   let rezultArray = [];
   // якщо всі дані є, то почати формувати масив з транзакціями, сортування та розрахунки
   if (settles?.length > 0 && friends?.length > 0) {
-    // '============================'
+    //якщо у людини нема друзів то брати людей з розрахунків
     const myId = userdata._id;
-    const notFriend = [];
 
-    // Function to check if a user is in the friends array
+    // перевірка на те чи ти друг чи ні
     function isFriend(userId) {
       return friends.some((friend) => friend.userInfo._id === userId);
     }
 
-    // Iterate through settles and check for non-friends
+    // прохід по масиву і перевірка чи друг, якщо так до дадаєш до друзів і тавиш позначку що не друг
     settles.forEach((settle) => {
       const { ower, lender } = settle;
 
       if (ower._id !== myId && !isFriend(ower._id)) {
-        friends.push({userInfo: ower , notFriend: true});
+        friends.push({ userInfo: ower, notFriend: true });
       }
 
       if (lender._id !== myId && !isFriend(lender._id)) {
-        friends.push({userInfo:lender , notFriend: true});
+        friends.push({ userInfo: lender, notFriend: true });
       }
     });
-
-    console.log('not friend',notFriend);
-
-    // friends.push
-    // '============================'
 
     friends.forEach((friend) => {
       let obj = {};
       obj.friendName = friend.userInfo.displayName;
+      obj.friendId = friend.userInfo._id;
+      obj.notFriend = friend.notFriend;
 
       let settlesArr = settles.filter(
         (settle) =>
@@ -153,11 +182,8 @@ const Friends = () => {
       }
     });
   }
-
-  console.log("settles", settles);
-  console.log("friends", friends);
-  console.log("rezult array", rezultArray);
-
+  console.log(rezultArray);
+  console.log(friendPopupOpenId);
   return (
     <div className="bg-green-600 min-h-screen">
       <h1 className="text-2xl font-bold mb-3 block">Друзі</h1>
@@ -172,13 +198,9 @@ const Friends = () => {
         )}
         {rezultArray.length > 0 &&
           rezultArray.map((friend, index) => (
-            <div key={index}>
-              <div
-                
-                className="hidden md:bg-green-800 md:p-2 md:rounded-lg md:block"
-              >
-      
-                <div className="flex bg-green-900 md:bg-transparent p-2 md:p-0 flex-col md:flex-row mb-10 md:mb-2 items-center gap-3">
+            <div key={index} onClick={()=>friendPopupHandler(friend.friendId)}>
+              <div className="hidden md:bg-green-800 md:p-2 md:rounded-lg md:block">
+                <div className="flex bg-green-900 md:bg-transparent p-2 md:p-0 flex-col md:flex-row mb-10 md:my-1 items-center gap-3">
                   <span className="text-xl font-bold pr-5">
                     {friend.friendName}
                   </span>
@@ -197,15 +219,24 @@ const Friends = () => {
                       {userdata.curency.curencySymbol}
                     </span>
                   </div>
+                  {friend.notFriend ? (
+                    <span
+                      onClick={() => addFriendHandler(friend.friendId)}
+                      className="w-6 h-6 bg-slate-800 flex items-center justify-center rounded-full cursor-pointer"
+                    >
+                      <FontAwesomeIcon className="w-4 h-4" icon={faUserPlus} />
+                    </span>
+                  ) : (
+                    ""
+                  )}
                 </div>
-                <div className="flex flex-col items-center  md:items-start gap-2">
+                <div className={` flex-col items-center md:mt-3  md:items-start gap-2 ${friendPopupOpenId.includes(friend.friendId)?'flex':'hidden'}`}>
                   {friend.settles?.length > 0 &&
                     friend.settles.map((transaction, index) => (
                       <div
-                        key={index+'desktopSettles'}
+                        key={index + "desktopSettles"}
                         className="flex bg-green-900 md:bg-transparent p-2 md:p-0 flex-col md:flex-row mb-10 md:mb-0 items-center gap-2 rounded-lg py-1 "
                       >
-                        
                         <span className="flex gap-2 rounded-full pl-2 p-1 bg-slate-800">
                           <span className="text-red-500">
                             {transaction.ower.displayName}
@@ -261,12 +292,9 @@ const Friends = () => {
                     ))}
                 </div>
               </div>
-
-              <div
-                
-                className="md:hidden text-sm bg-green-800 p-2 rounded-lg"
-              >
-                <div className="flex bg-green-900 mb-3 p-2 items-center justify-between">
+                    {/* для мобілки */}
+              <div className="md:hidden text-sm bg-green-800 p-2 rounded-lg">
+                <div className="flex p-2 items-center rounded-lg justify-between">
                   <span className="text-xl pr-5">{friend.friendName}</span>
                   <div className="flex gap-2 bg-slate-800 items-center rounded-full px-2">
                     <FontAwesomeIcon className="" icon={faCoins} />
@@ -284,14 +312,13 @@ const Friends = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
+                <div className={` flex-col items-center gap-2 ${friendPopupOpenId.includes(friend.friendId)?'flex':'hidden'}`}>
                   {friend.settles?.length > 0 &&
                     friend.settles.map((transaction, index) => (
                       <div
-                        key={index+'mobileSettles'}
+                        key={index + "mobileSettles"}
                         className="flex bg-green-900 justify-stretch w-full p-2 flex-col items-center gap-2 rounded-lg py-1 "
                       >
-                        
                         <span className="flex gap-2 rounded-full pl-2 p-1 bg-slate-800">
                           <span className="text-red-500">
                             {transaction.ower.displayName}
